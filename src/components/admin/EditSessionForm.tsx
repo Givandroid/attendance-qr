@@ -226,7 +226,7 @@ export default function EditSessionForm({ session, onSuccess, onCancel }: EditSe
           <Label className="text-sm sm:text-base text-red-900 font-medium flex items-center gap-2">
             <div className="w-2 h-2 bg-red-600 rounded-full"></div>
             Waktu Selesai
-            <span className="text-slate-400 text-xs sm:text-sm font-normal ml-2">(Opsional)</span>
+            <span className="text-red-500">*</span>
           </Label>
           
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
