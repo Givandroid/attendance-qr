@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import QRCodeDisplay from '@/components/shared/QRCodeDisplay'
-import { exportToPDF, exportToCSV } from '@/lib/export-utils'
+import { exportToPDF } from '@/lib/export-utils'
 import { Edit } from 'lucide-react'
 import {
   ArrowLeft,
@@ -20,7 +20,6 @@ import {
   Clock,
   XCircle,
   CheckCircle,
-  FileSpreadsheet,
   Activity
 } from 'lucide-react'
 
@@ -132,15 +131,15 @@ export default function SessionMonitorPage() {
   if (!session) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <Card className="p-12 text-center border-0 shadow-xl rounded-3xl max-w-md">
-          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <XCircle className="w-10 h-10 text-red-600" />
+        <Card className="p-8 sm:p-12 text-center border-0 shadow-xl rounded-3xl max-w-md">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+            <XCircle className="w-8 h-8 sm:w-10 sm:h-10 text-red-600" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">Sesi tidak ditemukan</h2>
-          <p className="text-gray-600 mb-6">Sesi yang Anda cari tidak ada atau telah dihapus</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">Sesi tidak ditemukan</h2>
+          <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">Sesi yang Anda cari tidak ada atau telah dihapus</p>
           <Button
             onClick={() => router.push('/admin')}
-            className="bg-blue-600 hover:bg-blue-700 rounded-xl"
+            className="bg-blue-600 hover:bg-blue-700 rounded-xl w-full sm:w-auto"
           >
             Kembali ke Dashboard
           </Button>
@@ -149,17 +148,83 @@ export default function SessionMonitorPage() {
     )
   }
 
+  const formatSessionDate = () => {
+    return new Date(session.session_date).toLocaleDateString('id-ID', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+  }
+
+  const formatTime = (time: string) => {
+    return time.slice(0, 5)
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-40 backdrop-blur-sm bg-white/80">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+    <>
+      {/* Header - Fixed Sticky with Transparent Background */}
+      <header className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-b border-gray-200 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+          {/* Mobile Header */}
+          <div className="sm:hidden space-y-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push('/admin')}
+              className="border-2 border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:scale-105 rounded-xl transition-all duration-300"
+            >
+              <ArrowLeft className="w-4 h-4 mr-1.5" />
+              Kembali
+            </Button>
+            
+            <div className="min-w-0">
+              <h1 className="text-lg font-semibold text-gray-900 truncate">Monitor Sesi</h1>
+              <p className="text-xs text-gray-500 truncate">Real-time attendance tracking</p>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={() => router.push(`/admin/sessions/${params.id}/edit`)}
+                variant="outline"
+                size="sm"
+                className="border-2 border-orange-200 text-orange-700 hover:bg-orange-50 hover:border-orange-300 hover:scale-105 rounded-xl transition-all duration-300 flex-1 min-w-0"
+              >
+                <Edit className="w-4 h-4 mr-1.5 flex-shrink-0" />
+                <span className="truncate">Edit</span>
+              </Button>
+              
+              <Button
+                onClick={toggleSessionStatus}
+                size="sm"
+                className={`${
+                  session.is_active
+                    ? 'bg-red-600 hover:bg-red-700'
+                    : 'bg-green-600 hover:bg-green-700'
+                } text-white rounded-xl hover:scale-105 transition-all duration-300 flex-1 min-w-0`}
+              >
+                {session.is_active ? (
+                  <>
+                    <XCircle className="w-4 h-4 mr-1.5 flex-shrink-0" />
+                    <span className="truncate">Tutup</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-4 h-4 mr-1.5 flex-shrink-0" />
+                    <span className="truncate">Buka</span>
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Desktop Header */}
+          <div className="hidden sm:flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Button
-                variant="ghost"
+                variant="outline"
                 onClick={() => router.push('/admin')}
-                className="hover:bg-gray-100 rounded-lg transition-all duration-300"
+                className="border-2 border-gray-200 hover:bg-gray-50 hover:border-gray-300 rounded-xl hover:scale-105 transition-all duration-300"
               >
                 <ArrowLeft className="w-5 h-5 mr-2" />
                 Kembali
@@ -175,7 +240,7 @@ export default function SessionMonitorPage() {
               <Button
                 onClick={() => router.push(`/admin/sessions/${params.id}/edit`)}
                 variant="outline"
-                className="border-2 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-blue-300 rounded-xl hover:scale-105 transition-all duration-300"
+                className="border-2 border-orange-200 text-orange-700 hover:bg-orange-50 hover:border-orange-300 rounded-xl hover:scale-105 transition-all duration-300"
               >
                 <Edit className="w-4 h-4 mr-2" />
                 Edit Sesi
@@ -185,8 +250,8 @@ export default function SessionMonitorPage() {
                 onClick={toggleSessionStatus}
                 className={`${
                   session.is_active
-                    ? 'bg-red-600 hover:bg-red-700'
-                    : 'bg-green-600 hover:bg-green-700'
+                    ? 'bg-red-600 hover:bg-red-700 shadow-lg shadow-red-500/20 hover:shadow-xl hover:shadow-red-500/30'
+                    : 'bg-green-600 hover:bg-green-700 shadow-lg shadow-green-500/20 hover:shadow-xl hover:shadow-green-500/30'
                 } text-white rounded-xl hover:scale-105 transition-all duration-300`}
               >
                 {session.is_active ? (
@@ -206,26 +271,27 @@ export default function SessionMonitorPage() {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid lg:grid-cols-3 gap-6">
+      {/* Main Content with padding top for fixed header */}
+      <div className="min-h-screen bg-gray-50 overflow-x-hidden pt-[140px] sm:pt-[88px]">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 overflow-x-hidden">
+        <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 w-full">
           {/* Left Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6 w-full min-w-0">
             {/* Session Info Card */}
-            <Card className="p-6 border border-gray-200 rounded-2xl hover:border-blue-200 hover:shadow-lg transition-all duration-300">
-              <div className="flex items-start gap-3 mb-4">
+            <Card className="p-4 sm:p-6 border border-gray-200 rounded-2xl hover:border-blue-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+              <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
                   <FileText className="w-5 h-5 text-blue-600" />
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-bold text-gray-900">Informasi Sesi</h3>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-bold text-gray-900 truncate">Informasi Sesi</h3>
                     <Badge
                       className={`${
                         session.is_active
                           ? 'bg-green-100 text-green-700 border-green-200'
                           : 'bg-red-100 text-red-700 border-red-200'
-                      } border px-3 py-1 rounded-lg font-medium`}
+                      } border px-2 sm:px-3 py-1 rounded-lg font-medium text-xs sm:text-sm flex-shrink-0`}
                     >
                       {session.is_active ? 'Aktif' : 'Ditutup'}
                     </Badge>
@@ -233,54 +299,66 @@ export default function SessionMonitorPage() {
                 </div>
               </div>
 
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 break-words">
                 {session.title}
               </h2>
 
               <div className="space-y-3">
                 {session.description && (
                   <div className="pb-3 border-b border-gray-100">
-                    <p className="text-sm text-gray-500 mb-1">Deskripsi</p>
-                    <p className="text-gray-700 leading-relaxed">{session.description}</p>
+                    <p className="text-xs sm:text-sm text-gray-500 mb-1">Deskripsi</p>
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed break-words">{session.description}</p>
                   </div>
                 )}
 
                 {session.location && (
-                  <div className="flex items-start gap-3 py-2">
-                    <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-gray-500">Lokasi</p>
-                      <p className="text-gray-900 font-medium">{session.location}</p>
+                  <div className="flex items-center gap-3 py-2">
+                    <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <MapPin className="w-4 h-4 text-green-600" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs text-gray-500 font-medium mb-0.5">Lokasi</p>
+                      <p className="text-sm sm:text-base text-gray-900 font-semibold truncate">{session.location}</p>
                     </div>
                   </div>
                 )}
 
-                <div className="flex items-start gap-3 py-2">
-                  <Calendar className="w-4 h-4 text-gray-400 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-gray-500">Tanggal & Waktu</p>
-                    <p className="text-gray-900 font-medium">
-                      {new Date(session.start_time).toLocaleString('id-ID', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
+                {/* Tanggal */}
+                <div className="flex items-center gap-3 py-2">
+                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Calendar className="w-4 h-4 text-purple-600" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-gray-500 font-medium mb-0.5">Tanggal</p>
+                    <p className="text-sm sm:text-base text-gray-900 font-semibold break-words">
+                      {formatSessionDate()}
                     </p>
                   </div>
                 </div>
 
+                {/* Waktu Mulai */}
+                <div className="flex items-center gap-3 py-2">
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Clock className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-gray-500 font-medium mb-0.5">Waktu Mulai</p>
+                    <p className="text-sm sm:text-base text-gray-900 font-semibold">
+                      {formatTime(session.start_time)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Waktu Selesai */}
                 {session.end_time && (
-                  <div className="flex items-start gap-3 py-2">
-                    <Clock className="w-4 h-4 text-gray-400 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-gray-500">Selesai</p>
-                      <p className="text-gray-900 font-medium">
-                        {new Date(session.end_time).toLocaleString('id-ID', {
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
+                  <div className="flex items-center gap-3 py-2">
+                    <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Clock className="w-4 h-4 text-red-600" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs text-gray-500 font-medium mb-0.5">Waktu Selesai</p>
+                      <p className="text-sm sm:text-base text-gray-900 font-semibold">
+                        {formatTime(session.end_time)} 
                       </p>
                     </div>
                   </div>
@@ -289,33 +367,43 @@ export default function SessionMonitorPage() {
             </Card>
 
             {/* Stats Card */}
-            <Card className="p-6 border border-gray-200 rounded-2xl bg-white hover:border-blue-200 hover:shadow-lg transition-all duration-300">
+            <Card className="p-4 sm:p-6 border border-gray-200 rounded-2xl bg-white hover:border-blue-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-14 h-14 bg-blue-600 rounded-xl flex items-center justify-center">
-                  <Users className="w-7 h-7 text-white" />
+                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Users className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-600 font-medium">Total Peserta</p>
-                  <p className="text-4xl font-bold text-gray-900">{attendances.length}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm text-gray-600 font-medium">Total Peserta</p>
+                  <p className="text-3xl sm:text-4xl font-bold text-gray-900">{attendances.length}</p>
                 </div>
               </div>
               {attendances.length > 0 && (
                 <div className="flex items-center gap-2 px-3 py-2 bg-green-50 rounded-lg border border-green-200">
                   <Activity className="w-4 h-4 text-green-600 animate-pulse" />
-                  <span className="text-sm font-medium text-green-700">Real-time updates aktif</span>
+                  <span className="text-xs sm:text-sm font-medium text-green-700">Real-time updates aktif</span>
                 </div>
               )}
             </Card>
 
             {/* QR Code */}
             {session.is_active && (
-              <QRCodeDisplay url={session.qr_code} title={session.title} />
+              <div className="w-full">
+                <QRCodeDisplay 
+                  url={session.qr_code} 
+                  title={session.title}
+                  sessionData={{
+                    date: formatSessionDate(),
+                    time: `${formatTime(session.start_time)}${session.end_time ? ` - ${formatTime(session.end_time)}` : ''}`,
+                    location: session.location
+                  }}
+                />
+              </div>
             )}
 
             {/* Export Card */}
-            <Card className="p-6 border border-gray-200 rounded-2xl hover:border-blue-200 hover:shadow-lg transition-all duration-300">
+            <Card className="p-4 sm:p-6 border border-gray-200 rounded-2xl hover:border-blue-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
                   <Download className="w-5 h-5 text-blue-600" />
                 </div>
                 <h3 className="font-bold text-gray-900">Export Laporan</h3>
@@ -325,19 +413,10 @@ export default function SessionMonitorPage() {
                 <Button
                   onClick={() => exportToPDF(session, attendances)}
                   disabled={attendances.length === 0}
-                  className="w-full bg-red-600 hover:bg-red-700 text-white rounded-xl hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  className="w-full bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-lg shadow-red-500/20 hover:shadow-xl hover:shadow-red-500/30 hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
                   <FileText className="w-4 h-4 mr-2" />
                   Export PDF
-                </Button>
-                <Button
-                  onClick={() => exportToCSV(session, attendances)}
-                  disabled={attendances.length === 0}
-                  variant="outline"
-                  className="w-full border-2 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-green-300 rounded-xl hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                >
-                  <FileSpreadsheet className="w-4 h-4 mr-2" />
-                  Export CSV
                 </Button>
               </div>
               
@@ -350,20 +429,20 @@ export default function SessionMonitorPage() {
           </div>
 
           {/* Main Content - Attendance List */}
-          <div className="lg:col-span-2">
-            <Card className="p-6 border border-gray-200 rounded-2xl">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+          <div className="lg:col-span-2 w-full min-w-0">
+            <Card className="p-4 sm:p-6 border border-gray-200 rounded-2xl w-full">
+              <div className="flex items-center justify-between mb-4 sm:mb-6 gap-2">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
                     <Users className="w-5 h-5 text-blue-600" />
                   </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900">Daftar Hadir</h3>
-                    <p className="text-sm text-gray-500">{attendances.length} peserta terdaftar</p>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-base sm:text-lg font-bold text-gray-900 truncate">Daftar Hadir</h3>
+                    <p className="text-xs sm:text-sm text-gray-500 truncate">{attendances.length} peserta terdaftar</p>
                   </div>
                 </div>
                 {attendances.length > 0 && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-lg border border-green-200">
+                  <div className="flex items-center gap-2 px-2 sm:px-3 py-1.5 bg-green-50 rounded-lg border border-green-200 flex-shrink-0">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                     <span className="text-xs font-medium text-green-700">Live</span>
                   </div>
@@ -371,50 +450,50 @@ export default function SessionMonitorPage() {
               </div>
 
               {attendances.length === 0 ? (
-                <div className="text-center py-16">
-                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Users className="w-10 h-10 text-gray-400" />
+                <div className="text-center py-12 sm:py-16">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                    <Users className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
                     Belum ada peserta
                   </h3>
-                  <p className="text-gray-600 max-w-sm mx-auto">
+                  <p className="text-sm sm:text-base text-gray-600 max-w-sm mx-auto">
                     Peserta yang melakukan absensi akan muncul di sini secara real-time
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3 max-h-[700px] overflow-y-auto pr-2">
+                <div className="space-y-3 max-h-[600px] sm:max-h-[700px] overflow-y-auto pr-1 sm:pr-2 w-full">
                   {attendances.map((att, index) => (
                     <Card
                       key={att.id}
-                      className="p-5 border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 rounded-xl group"
+                      className="p-4 sm:p-5 border border-gray-200 hover:border-blue-300 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 rounded-xl group w-full"
                     >
-                      <div className="flex items-start gap-4">
+                      <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4 w-full">
                         <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-blue-600 transition-colors">
                           <span className="font-bold text-blue-600 group-hover:text-white transition-colors">
                             {index + 1}
                           </span>
                         </div>
 
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-bold text-gray-900 text-lg mb-3 group-hover:text-blue-600 transition-colors">
+                        <div className="flex-1 min-w-0 w-full">
+                          <h4 className="font-bold text-gray-900 text-base sm:text-lg mb-3 group-hover:text-blue-600 transition-colors break-words">
                             {att.full_name}
                           </h4>
 
-                          <div className="grid sm:grid-cols-2 gap-3 text-sm">
-                            <div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm w-full">
+                            <div className="min-w-0">
                               <span className="text-gray-500">Instansi:</span>
-                              <p className="text-gray-900 font-medium">{att.institution}</p>
+                              <p className="text-gray-900 font-medium break-words">{att.institution}</p>
                             </div>
-                            <div>
+                            <div className="min-w-0">
                               <span className="text-gray-500">Jabatan:</span>
-                              <p className="text-gray-900 font-medium">{att.position}</p>
+                              <p className="text-gray-900 font-medium break-words">{att.position}</p>
                             </div>
-                            <div>
+                            <div className="min-w-0">
                               <span className="text-gray-500">No. Telepon:</span>
-                              <p className="text-gray-900 font-medium">{att.phone_number}</p>
+                              <p className="text-gray-900 font-medium break-words">{att.phone_number}</p>
                             </div>
-                            <div>
+                            <div className="min-w-0">
                               <span className="text-gray-500">Waktu Absen:</span>
                               <p className="text-gray-900 font-medium">
                                 {new Date(att.checked_in_at).toLocaleTimeString('id-ID', {
@@ -424,10 +503,25 @@ export default function SessionMonitorPage() {
                               </p>
                             </div>
                           </div>
+
+                          {/* Signature untuk mobile */}
+                          {att.signature && (
+                            <div className="mt-3 sm:hidden w-full">
+                              <p className="text-xs text-gray-500 mb-2">Tanda Tangan</p>
+                              <div className="w-full max-w-[200px]">
+                                <img
+                                  src={att.signature}
+                                  alt="Signature"
+                                  className="w-full h-16 object-contain border-2 border-gray-200 rounded-lg bg-gray-50"
+                                />
+                              </div>
+                            </div>
+                          )}
                         </div>
 
+                        {/* Signature untuk desktop */}
                         {att.signature && (
-                          <div className="flex-shrink-0">
+                          <div className="hidden sm:block flex-shrink-0">
                             <p className="text-xs text-gray-500 mb-2 text-center">Tanda Tangan</p>
                             <img
                               src={att.signature}
@@ -445,6 +539,7 @@ export default function SessionMonitorPage() {
           </div>
         </div>
       </main>
-    </div>
+      </div>
+    </>
   )
 }

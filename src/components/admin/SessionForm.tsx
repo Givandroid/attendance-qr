@@ -7,17 +7,23 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card } from '@/components/ui/card'
-import { Calendar, Clock, MapPin, FileText, Sparkles } from 'lucide-react'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { ChevronDownIcon, MapPin, Sparkles, Info, CalendarCheck, Type, FileEdit } from 'lucide-react'
+import { format } from 'date-fns'
+import { id as localeId } from 'date-fns/locale'
 
 export default function SessionForm({ onSuccess }: { onSuccess?: (id: string) => void }) {
   const [loading, setLoading] = useState(false)
+  const [startDateOpen, setStartDateOpen] = useState(false)
+  const [endDateOpen, setEndDateOpen] = useState(false)
+  const [startDate, setStartDate] = useState<Date>()
+  const [endDate, setEndDate] = useState<Date>()
   const [form, setForm] = useState({
     title: '',
     description: '',
     location: '',
-    start_date: '',
     start_time: '',
-    end_date: '',
     end_time: ''
   })
 
@@ -29,26 +35,21 @@ export default function SessionForm({ onSuccess }: { onSuccess?: (id: string) =>
       const tempId = crypto.randomUUID()
       const qrUrl = `${window.location.origin}/attendance/${tempId}`
 
-      const start_time = form.start_date && form.start_time 
-        ? `${form.start_date}T${form.start_time}` 
-        : form.start_date
-
-      const end_time = form.end_date && form.end_time 
-        ? `${form.end_date}T${form.end_time}` 
-        : form.end_date || null
+      const sessionPayload = {
+        id: tempId,
+        title: form.title,
+        description: form.description,
+        location: form.location,
+        session_date: startDate ? format(startDate, 'yyyy-MM-dd') : '',
+        start_time: form.start_time,
+        end_time: form.end_time || null,
+        qr_code: qrUrl,
+        is_active: true
+      }
 
       const { data, error } = await supabase
         .from('sessions')
-        .insert([{
-          id: tempId,
-          title: form.title,
-          description: form.description,
-          location: form.location,
-          start_time,
-          end_time,
-          qr_code: qrUrl,
-          is_active: true
-        }])
+        .insert([sessionPayload])
         .select()
         .single()
 
@@ -61,11 +62,11 @@ export default function SessionForm({ onSuccess }: { onSuccess?: (id: string) =>
         title: '', 
         description: '', 
         location: '', 
-        start_date: '', 
         start_time: '',
-        end_date: '',
         end_time: ''
       })
+      setStartDate(undefined)
+      setEndDate(undefined)
     } catch (error) {
       alert('❌ Gagal membuat sesi')
       console.error(error)
@@ -75,215 +76,240 @@ export default function SessionForm({ onSuccess }: { onSuccess?: (id: string) =>
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header Card - Solid Color */}
-      <Card className="p-8 border border-gray-200 rounded-2xl bg-white hover:border-blue-200 hover:shadow-lg transition-all duration-300">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
-            <Sparkles className="w-6 h-6 text-blue-600" />
+    <Card className="p-4 sm:p-8 border border-slate-200 rounded-2xl bg-white shadow-sm">
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+        {/* Header */}
+        <div className="flex items-start gap-3 sm:gap-4 pb-4 sm:pb-6 border-b border-slate-200">
+          <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/30">
+            <CalendarCheck className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Buat Sesi Rapat</h2>
-            <p className="text-gray-600">Lengkapi informasi sesi untuk generate QR code</p>
+            <h2 className="text-xl sm:text-2xl font-semibold text-slate-900">Informasi Sesi</h2>
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5 sm:mt-1">Lengkapi detail sesi rapat Anda</p>
           </div>
         </div>
-      </Card>
 
-      {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
         {/* Judul Rapat */}
-        <Card className="p-6 border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 rounded-xl bg-white">
-          <div className="flex items-start gap-3 mb-3">
-            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-              <FileText className="w-5 h-5 text-blue-600" />
-            </div>
-            <div className="flex-1">
-              <Label className="text-gray-900 font-semibold text-base mb-2 block">
-                Judul Rapat <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                required
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                placeholder="Contoh: Rapat Koordinasi Q4 2025"
-                className="border-2 border-gray-200 rounded-xl h-12 px-4 text-gray-900 placeholder:text-gray-400"
-              />
-            </div>
-          </div>
-        </Card>
+        <div className="space-y-2 sm:space-y-3">
+          <Label className="text-sm sm:text-base text-slate-900 font-medium flex items-center gap-2">
+            <Type className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500" />
+            Judul Rapat
+            <span className="text-red-500">*</span>
+          </Label>
+          <Input
+            required
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+            placeholder="Masukkan judul rapat"
+            className="h-10 sm:h-11 text-sm sm:text-base border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 rounded-lg"
+          />
+        </div>
 
         {/* Deskripsi */}
-        <Card className="p-6 border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 rounded-xl bg-white">
-          <div className="flex items-start gap-3 mb-3">
-            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-              <FileText className="w-5 h-5 text-blue-600" />
-            </div>
-            <div className="flex-1">
-              <Label className="text-gray-900 font-semibold text-base mb-2 block">
-                Deskripsi
-              </Label>
-              <Textarea
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="Detail agenda rapat (opsional)"
-                className="border-2 border-gray-200 rounded-xl min-h-28 px-4 py-3 text-gray-900 placeholder:text-gray-400 resize-none"
-              />
-            </div>
-          </div>
-        </Card>
+        <div className="space-y-2 sm:space-y-3">
+          <Label className="text-sm sm:text-base text-slate-900 font-medium flex items-center gap-2">
+            <FileEdit className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500" />
+            Deskripsi
+            <span className="text-slate-400 text-xs sm:text-sm font-normal">(Opsional)</span>
+          </Label>
+          <Textarea
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            placeholder="Tambahkan deskripsi atau agenda rapat"
+            className="min-h-20 sm:min-h-24 text-sm sm:text-base border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 rounded-lg resize-none"
+          />
+        </div>
 
         {/* Lokasi */}
-        <Card className="p-6 border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 rounded-xl bg-white">
-          <div className="flex items-start gap-3 mb-3">
-            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-              <MapPin className="w-5 h-5 text-blue-600" />
-            </div>
-            <div className="flex-1">
-              <Label className="text-gray-900 font-semibold text-base">
-                Lokasi <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                value={form.location}
-                onChange={(e) => setForm({ ...form, location: e.target.value })}
-                placeholder="Contoh: Ruang Meeting Lt. 3"
-                className="border-2 border-gray-200 rounded-xl h-12 px-4 text-gray-900 placeholder:text-gray-400"
-              />
-            </div>
-          </div>
-        </Card>
+        <div className="space-y-2 sm:space-y-3">
+          <Label className="text-sm sm:text-base text-slate-900 font-medium flex items-center gap-2">
+            <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500" />
+            Lokasi
+            <span className="text-red-500">*</span>
+          </Label>
+          <Input
+            required
+            value={form.location}
+            onChange={(e) => setForm({ ...form, location: e.target.value })}
+            placeholder="Masukkan lokasi rapat"
+            className="h-10 sm:h-11 text-sm sm:text-base border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 rounded-lg"
+          />
+        </div>
 
         {/* Divider */}
-        <div className="relative py-4">
+        <div className="relative py-2">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-200"></div>
+            <div className="w-full border-t border-slate-200"></div>
           </div>
           <div className="relative flex justify-center">
-            <span className="bg-gray-50 px-4 text-sm font-semibold text-gray-500">Jadwal Rapat</span>
+            <span className="bg-white px-3 text-xs sm:text-sm font-medium text-slate-500">Jadwal Rapat</span>
           </div>
         </div>
 
-        {/* Waktu Mulai */}
-        <Card className="p-6 border border-blue-200 hover:border-blue-300 hover:shadow-xl transition-all duration-300 rounded-xl bg-blue-50">
-          <div className="flex items-start gap-3 mb-4">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Calendar className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex-1">
-              <Label className="text-gray-900 font-semibold text-base">
-                Waktu Mulai <span className="text-red-500">*</span>
-              </Label>
-              <p className="text-sm text-gray-600 mt-1">Tentukan kapan rapat akan dimulai</p>
-            </div>
-          </div>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm text-gray-700 font-medium flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-blue-600" />
+        {/* Waktu Mulai - BLUE */}
+        <div className="space-y-3 sm:space-y-4 p-4 sm:p-5 rounded-xl bg-blue-50 border-2 border-blue-200">
+          <Label className="text-sm sm:text-base text-blue-900 font-medium flex items-center gap-2">
+            <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+            Waktu Mulai
+            <span className="text-red-500 ml-1">*</span>
+          </Label>
+          
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            {/* Date Picker */}
+            <div className="flex flex-col gap-2 sm:gap-3 flex-1">
+              <Label htmlFor="start-date" className="text-xs sm:text-sm text-blue-700 font-medium px-1">
                 Tanggal
-              </label>
-              <Input
-                type="date"
-                required
-                value={form.start_date}
-                onChange={(e) => setForm({ ...form, start_date: e.target.value })}
-                className="border-2 border-gray-200 bg-white rounded-xl h-12 px-4 text-gray-900"
-              />
+              </Label>
+              <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    id="start-date"
+                    className="justify-between font-normal bg-white border-2 border-blue-300 hover:border-blue-400 hover:bg-blue-50/70 h-10 sm:h-11 rounded-lg transition-all"
+                  >
+                    <span className={`text-sm sm:text-base ${startDate ? "text-blue-900" : "text-slate-500"}`}>
+                      {startDate ? format(startDate, 'dd MMM yyyy', { locale: localeId }) : "Pilih tanggal"}
+                    </span>
+                    <ChevronDownIcon className="w-4 h-4 text-blue-600" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto overflow-hidden p-0 bg-white border-blue-200 shadow-lg" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={startDate}
+                    captionLayout="dropdown"
+                    onSelect={(date) => {
+                      setStartDate(date)
+                      setStartDateOpen(false)
+                    }}
+                    locale={localeId}
+                    disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                    fromYear={2024}
+                    toYear={2030}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm text-gray-700 font-medium flex items-center gap-2">
-                <Clock className="w-4 h-4 text-blue-600" />
-                Jam
-              </label>
+
+            {/* Time Picker */}
+            <div className="flex flex-col gap-2 sm:gap-3 flex-1">
+              <Label htmlFor="start-time" className="text-xs sm:text-sm text-blue-700 font-medium px-1">
+                Waktu
+              </Label>
               <Input
                 type="time"
+                id="start-time"
                 required
                 value={form.start_time}
                 onChange={(e) => setForm({ ...form, start_time: e.target.value })}
-                className="border-2 border-gray-200 bg-white rounded-xl h-12 px-4 text-gray-900"
+                className="h-10 sm:h-11 text-sm sm:text-base bg-white border-2 border-blue-300 hover:border-blue-400 hover:bg-blue-50/70 focus:border-blue-500 focus:ring-blue-200 rounded-lg transition-all text-blue-900"
               />
             </div>
           </div>
-        </Card>
+        </div>
 
-        {/* Waktu Selesai */}
-        <Card className="p-6 border-2 border-dashed border-gray-300 hover:border-blue-300 hover:shadow-lg transition-all duration-300 rounded-xl bg-white">
-          <div className="flex items-start gap-3 mb-4">
-            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Clock className="w-5 h-5 text-gray-600" />
-            </div>
-            <div className="flex-1">
-              <Label className="text-gray-900 font-semibold text-base">
-                Waktu Selesai <span className="text-red-500">*</span>
-              </Label>
-              <p className="text-sm text-gray-600 mt-1">Estimasi waktu berakhir rapat</p>
-            </div>
-          </div>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm text-gray-700 font-medium flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-gray-500" />
+        {/* Waktu Selesai - RED */}
+        <div className="space-y-3 sm:space-y-4 p-4 sm:p-5 rounded-xl bg-red-50 border-2 border-red-200">
+          <Label className="text-sm sm:text-base text-red-900 font-medium flex items-center gap-2">
+            <div className="w-2 h-2 bg-red-600 rounded-full"></div>
+            Waktu Selesai
+            <span className="text-slate-400 text-xs sm:text-sm font-normal ml-2">(Opsional)</span>
+          </Label>
+          
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            {/* Date Picker */}
+            <div className="flex flex-col gap-2 sm:gap-3 flex-1">
+              <Label htmlFor="end-date" className="text-xs sm:text-sm text-red-700 font-medium px-1">
                 Tanggal
-              </label>
-              <Input
-                type="date"
-                value={form.end_date}
-                onChange={(e) => setForm({ ...form, end_date: e.target.value })}
-                className="border-2 border-gray-200 bg-white rounded-xl h-12 px-4 text-gray-900"
-              />
+              </Label>
+              <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    id="end-date"
+                    className="justify-between font-normal bg-white border-2 border-red-300 hover:border-red-400 hover:bg-red-50/70 h-10 sm:h-11 rounded-lg transition-all text-sm sm:text-base"
+                  >
+                    <span className={endDate ? "text-red-900" : "text-slate-500"}>
+                      {endDate ? format(endDate, 'dd MMM yyyy', { locale: localeId }) : "Pilih tanggal"}
+                    </span>
+                    <ChevronDownIcon className="w-4 h-4 text-red-600" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto overflow-hidden p-0 bg-white border-red-200 shadow-lg" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={endDate}
+                    captionLayout="dropdown"
+                    onSelect={(date) => {
+                      setEndDate(date)
+                      setEndDateOpen(false)
+                    }}
+                    locale={localeId}
+                    disabled={(date) => {
+                      const today = new Date(new Date().setHours(0, 0, 0, 0))
+                      if (date < today) return true
+                      if (startDate && date < startDate) return true
+                      return false
+                    }}
+                    fromYear={2024}
+                    toYear={2030}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm text-gray-700 font-medium flex items-center gap-2">
-                <Clock className="w-4 h-4 text-gray-500" />
-                Jam
-              </label>
+
+            {/* Time Picker */}
+            <div className="flex flex-col gap-2 sm:gap-3 flex-1">
+              <Label htmlFor="end-time" className="text-xs sm:text-sm text-red-700 font-medium px-1">
+                Waktu
+              </Label>
               <Input
                 type="time"
+                id="end-time"
                 value={form.end_time}
                 onChange={(e) => setForm({ ...form, end_time: e.target.value })}
-                className="border-2 border-gray-200 bg-white rounded-xl h-12 px-4 text-gray-900"
+                className="h-10 sm:h-11 text-sm sm:text-base bg-white border-2 border-red-300 hover:border-red-400 hover:bg-red-50/70 focus:border-red-500 focus:ring-red-200 rounded-lg transition-all text-red-900"
               />
             </div>
           </div>
-        </Card>
+        </div>
 
         {/* Info Box */}
-        <Card className="p-5 border border-green-200 rounded-xl bg-green-50">
-          <div className="flex gap-3">
-            <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
-              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-green-900 mb-1">
-                QR Code Otomatis
-              </p>
-              <p className="text-sm text-green-700">
-                Setelah sesi dibuat, QR code akan langsung tersedia dan siap untuk dibagikan kepada peserta
-              </p>
-            </div>
+        <div className="flex gap-2.5 sm:gap-3 p-3 sm:p-4 rounded-xl bg-emerald-50 border border-emerald-200">
+          <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-emerald-500 flex-shrink-0">
+            <Info className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           </div>
-        </Card>
+          <div className="flex-1">
+            <p className="text-xs sm:text-sm font-medium text-emerald-900 mb-0.5 sm:mb-1">
+              QR Code Otomatis
+            </p>
+            <p className="text-xs sm:text-sm text-emerald-700">
+              Setelah sesi dibuat, QR code akan langsung tersedia dan siap dibagikan kepada peserta
+            </p>
+          </div>
+        </div>
 
         {/* Submit Button */}
         <Button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white h-14 rounded-xl text-base font-semibold shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+          className="w-full h-11 sm:h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-medium shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-200 disabled:opacity-50 text-sm sm:text-base"
         >
           {loading ? (
-            <div className="flex items-center gap-3">
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               <span>Membuat sesi...</span>
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5" />
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
               <span>Buat Sesi & Generate QR Code</span>
             </div>
           )}
         </Button>
       </form>
-    </div>
+    </Card>
   )
 }

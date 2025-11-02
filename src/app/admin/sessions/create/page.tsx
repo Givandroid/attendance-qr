@@ -15,13 +15,13 @@ export default function CreateSessionPage() {
         <div className="max-w-4xl mx-auto px-6 py-4">
           <div className="flex items-center gap-4">
             <Button
-              variant="ghost"
-              onClick={() => router.push('/admin')}
-              className="hover:bg-gray-100 rounded-lg transition-all duration-300"
-            >
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              Kembali
-            </Button>
+                variant="outline"
+                onClick={() => router.push('/admin')}
+                className="border-2 border-gray-200 hover:bg-gray-50 hover:border-gray-300 rounded-xl hover:scale-105 transition-all duration-300"
+              >
+                <ArrowLeft className="w-5 h-5 mr-2" />
+                Kembali
+              </Button>
             <div className="h-8 w-px bg-gray-200" />
             <div>
               <h1 className="text-xl font-semibold text-gray-900">Buat Sesi Baru</h1>

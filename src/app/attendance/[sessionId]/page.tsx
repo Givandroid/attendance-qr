@@ -81,6 +81,20 @@ export default function AttendancePage() {
     }
   }
 
+  const formatSessionDate = () => {
+    if (!session) return ''
+    return new Date(session.session_date).toLocaleDateString('id-ID', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    })
+  }
+
+  const formatTime = (time: string) => {
+    return time.slice(0, 5)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -150,6 +164,7 @@ export default function AttendancePage() {
             </div>
           </div>
 
+          {/* 🔥 INFO SESI DENGAN FORMAT BARU */}
           <div className="grid md:grid-cols-3 gap-4">
             {session.location && (
               <div className="flex items-center gap-3 text-gray-700">
@@ -162,40 +177,31 @@ export default function AttendancePage() {
                 </div>
               </div>
             )}
+            
+            {/* Tanggal */}
+            <div className="flex items-center gap-3 text-gray-700">
+              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 font-medium">Tanggal</p>
+                <p className="font-medium">{formatSessionDate()}</p>
+              </div>
+            </div>
+
+            {/* Waktu Mulai */}
             <div className="flex items-center gap-3 text-gray-700">
               <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
                 <Clock className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-xs text-gray-500 font-medium">Waktu Mulai</p>
+                <p className="text-xs text-gray-500 font-medium">Waktu</p>
                 <p className="font-medium">
-                  {new Date(session.start_time).toLocaleString('id-ID', {
-                    day: 'numeric',
-                    month: 'long',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
+                  {formatTime(session.start_time)}
+                  {session.end_time && ` - ${formatTime(session.end_time)}`} WIB
                 </p>
               </div>
             </div>
-            {session.end_time && (
-              <div className="flex items-center gap-3 text-gray-700">
-                <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 font-medium">Waktu Selesai</p>
-                  <p className="font-medium">
-                    {new Date(session.end_time).toLocaleString('id-ID', {
-                      day: 'numeric',
-                      month: 'long',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </p>
-                </div>
-              </div>
-            )}
           </div>
         </Card>
 
