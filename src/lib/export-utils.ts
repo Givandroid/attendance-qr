@@ -115,7 +115,7 @@ export const exportToPDF = async (session: Session, attendances: Attendance[]) =
   doc.setFont('helvetica', 'bold')
   doc.text('Waktu', labelX, yPos)
   doc.setFont('helvetica', 'normal')
-  doc.text(`: ${startTime} - ${endTime} WIB`, valueX, yPos)
+  doc.text(`: ${startTime} - ${endTime}`, valueX, yPos)
   yPos += 6
   
   // Jumlah Peserta
