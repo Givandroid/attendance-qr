@@ -7,52 +7,52 @@ export const exportToPDF = async (session: Session, attendances: Attendance[]) =
   
   // Fungsi untuk menambahkan kop surat (hanya halaman pertama)
   const addLetterhead = async () => {
-    try {
-      const logoUrl = `${window.location.origin}/assets/logo-imigrasi.png`
+  try {
+    const logoUrl = `${window.location.origin}/assets/logo-imigrasi.png`
+    
+    const response = await fetch(logoUrl)
+    if (response.ok) {
+      const blob = await response.blob()
+      const reader = new FileReader()
       
-      const response = await fetch(logoUrl)
-      if (response.ok) {
-        const blob = await response.blob()
-        const reader = new FileReader()
-        
-        await new Promise((resolve) => {
-          reader.onloadend = () => {
-            const base64data = reader.result as string
-            doc.addImage(base64data, 'PNG', 14, 8, 20, 20)
-            resolve(null)
-          }
-          reader.onerror = resolve
-          reader.readAsDataURL(blob)
-        })
-      } else {
-        console.log('Logo tidak ditemukan di:', logoUrl)
-      }
-    } catch (error) {
-      console.log('Error loading logo:', error)
+      await new Promise((resolve) => {
+        reader.onloadend = () => {
+          const base64data = reader.result as string
+          doc.addImage(base64data, 'PNG', 14, 8, 20, 20)
+          resolve(null)
+        }
+        reader.onerror = resolve
+        reader.readAsDataURL(blob)
+      })
+    } else {
+      console.log('Logo tidak ditemukan di:', logoUrl)
     }
-  
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'bold')
-    
-    doc.text('KEMENTERIAN IMIGRASI DAN PEMASYARAKATAN REPUBLIK INDONESIA', 105, 10, { align: 'center' })
-    
-    doc.setFontSize(10)
-    doc.text('DIREKTORAT JENDERAL IMIGRASI', 105, 14, { align: 'center' })
-    doc.text('KANTOR WILAYAH KALIMANTAN TIMUR', 105, 18, { align: 'center' })
-    doc.text('KANTOR IMIGRASI KELAS II TPI TARAKAN', 105, 22, { align: 'center' })
-    
-    doc.setFontSize(8)
-    doc.setFont('helvetica', 'normal')
-    doc.text('Jl. P. Sumatera No.1, Kec Tarakan Tengah, Kota Tarakan, Kalimantan Utara', 105, 27, { align: 'center' })
-    doc.text('Telepon: 0811-8773-337, Faxsimili: -', 105, 31, { align: 'center' })
-    doc.text('Laman: tarakan.imigrasi.go.id, Pos-el: kanim_tarakan@imigrasi.go.id', 105, 35, { align: 'center' })
-    
-    // Garis pembatas
-    doc.setLineWidth(0.8)
-    doc.line(14, 38, 196, 38)
-    doc.setLineWidth(0.3)
-    doc.line(14, 39.5, 196, 39.5)
+  } catch (error) {
+    console.log('Error loading logo:', error)
   }
+
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'bold')
+  
+  doc.text('KEMENTERIAN IMIGRASI DAN PEMASYARAKATAN REPUBLIK INDONESIA', 105, 10, { align: 'center' })
+  
+  doc.setFontSize(10)
+  doc.text('DIREKTORAT JENDERAL IMIGRASI', 105, 14, { align: 'center' })  
+  doc.text('KANTOR WILAYAH KALIMANTAN TIMUR', 105, 18, { align: 'center' })  
+  doc.text('KANTOR IMIGRASI KELAS II TPI TARAKAN', 105, 22, { align: 'center' })  
+  
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'normal')
+  doc.text('Jl. P. Sumatera No.1, Kec Tarakan Tengah, Kota Tarakan, Kalimantan Utara', 105, 26, { align: 'center' })  
+  doc.text('Telepon: 0811-8773-337, Faxsimili: -', 105, 30, { align: 'center' }) 
+  doc.text('Laman: tarakan.imigrasi.go.id, Pos-el: kanim_tarakan@imigrasi.go.id', 105, 34, { align: 'center' })  
+  
+  // Garis pembatas
+  doc.setLineWidth(0.8)
+  doc.line(14, 38, 196, 38)  
+  doc.setLineWidth(0.3)
+  doc.line(14, 39.5, 196, 39.5)  
+}
   
   await addLetterhead()
   
@@ -84,7 +84,7 @@ export const exportToPDF = async (session: Session, attendances: Attendance[]) =
     doc.setFont('helvetica', 'normal')
     const descLines = doc.splitTextToSize(`: ${session.description}`, 140)
     doc.text(descLines, valueX, yPos)
-    yPos += Math.min(descLines.length * 5, 12) 
+    yPos += 6 
   }
   
   // Lokasi
@@ -137,13 +137,13 @@ export const exportToPDF = async (session: Session, attendances: Attendance[]) =
   
   const tableStartY = boxStartY + boxHeight + 5 
   
-  // Tabel Kehadiran
+  // Tabel Kehadiran - TANPA KOLOM TTD (akan di-render manual)
   const tableData = attendances.map((att, index) => [
     index + 1,
     att.full_name || '-',
     att.institution || '-',
     att.position || '-',
-    '' // Kolom tanda tangan kosong untuk TTD manual
+    '' // Placeholder untuk tanda tangan
   ])
   
   autoTable(doc, {
@@ -186,13 +186,40 @@ export const exportToPDF = async (session: Session, attendances: Attendance[]) =
       4: { 
         cellWidth: 30, 
         halign: 'center',
-        minCellHeight: 12
+        minCellHeight: 15 // Lebih tinggi untuk tampung signature
       }
     },
-    // Hanya tampilkan header di halaman pertama
     showHead: 'firstPage',
     margin: { top: 10, left: 14, right: 14 },
+    // Tambahkan signature di setiap cell
     didDrawCell: (data) => {
+      // Hanya untuk kolom tanda tangan (index 4) dan bukan header
+      if (data.column.index === 4 && data.section === 'body') {
+        const rowIndex = data.row.index
+        const attendance = attendances[rowIndex]
+        
+        if (attendance && attendance.signature) {
+          try {
+            // Tambahkan gambar signature
+            const cell = data.cell
+            const imgWidth = 25 // lebar gambar
+            const imgHeight = 10 // tinggi gambar
+            const imgX = cell.x + (cell.width - imgWidth) / 2 // center horizontal
+            const imgY = cell.y + (cell.height - imgHeight) / 2 // center vertical
+            
+            doc.addImage(
+              attendance.signature, 
+              'PNG', 
+              imgX, 
+              imgY, 
+              imgWidth, 
+              imgHeight
+            )
+          } catch (error) {
+            console.error('Error adding signature:', error)
+          }
+        }
+      }
     }
   })
   
