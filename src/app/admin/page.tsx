@@ -172,13 +172,6 @@ export default function AdminDashboard() {
 
             <div className="flex items-center gap-3">
               <Button
-                onClick={() => router.push('/')}
-                variant="ghost"
-                className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all duration-300"
-              >
-                Ke Home
-              </Button>
-              <Button
                 onClick={handleLogout}
                 variant="outline"
                 className="border-gray-200 text-gray-700 hover:bg-gray-100 hover:border-gray-300 rounded-lg transition-all duration-300"

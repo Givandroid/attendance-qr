@@ -48,20 +48,20 @@ export default function LandingPage() {
 
           {/* Subtitle */}
           <p className="text-xl text-gray-600 mb-12 max-w-2xl mx-auto leading-relaxed">
-            Kelola kehadiran dengan QR code. Real-time monitoring dan laporan otomatis dalam satu platform.
+            Kelola kehadiran dengan QR code. Real-time monitoring dan laporan otomatis.
           </p>
 
           {/* CTA Buttons with smooth hover */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
-              onClick={() => router.push('/admin')}
+              onClick={() => router.push('/admin/login?redirect=/admin')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-base rounded-xl font-medium shadow-lg shadow-blue-500/20 hover:shadow-2xl hover:shadow-blue-500/40 hover:scale-105 transition-all duration-300"
             >
-              Mulai Sekarang
+              Akses Dashboard
               <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
             <Button
-              onClick={() => router.push('/admin/sessions/create')}
+              onClick={() => router.push('/admin/login?redirect=/admin/sessions/create')}
               variant="outline"
               className="border-2 border-gray-200 text-gray-900 hover:bg-gray-50 hover:border-blue-200 px-8 py-6 text-base rounded-xl font-medium hover:scale-105 transition-all duration-300"
             >
@@ -118,29 +118,6 @@ export default function LandingPage() {
             </p>
           </Card>
         </div>
-      </section>
-
-      {/* CTA Section - Clean with hover effect */}
-      <section className="max-w-7xl mx-auto px-6 py-24">
-        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-blue-600 to-blue-700 rounded-3xl group hover:shadow-2xl transition-all duration-500 cursor-pointer hover:scale-[1.02]">
-          <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,transparent,black)]" />
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-white/10 to-blue-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 group-hover:animate-shimmer" />
-          <div className="relative px-8 py-16 md:px-16 md:py-20 text-center">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Siap untuk memulai?
-            </h2>
-            <p className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">
-              Buat sesi rapat pertama Anda dan kelola absensi dengan lebih efisien
-            </p>
-            <Button
-              onClick={() => router.push('/admin')}
-              className="bg-white hover:bg-gray-50 text-blue-600 px-10 py-6 text-base rounded-xl font-semibold shadow-2xl hover:shadow-3xl hover:scale-110 transition-all duration-300"
-            >
-              Akses Dashboard
-              <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </div>
-        </Card>
       </section>
 
       {/* Footer - Minimal with hover */}
