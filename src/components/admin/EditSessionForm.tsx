@@ -203,7 +203,7 @@ export default function EditSessionForm({ session, onSuccess, onCancel }: EditSe
               </Popover>
             </div>
 
-            {/* Time Picker */}
+            {/* Time Picker - Blue Section */}
             <div className="flex flex-col gap-2 sm:gap-3 flex-1">
               <Label htmlFor="start-time" className="text-xs sm:text-sm text-blue-700 font-medium px-1">
                 Waktu
@@ -214,7 +214,7 @@ export default function EditSessionForm({ session, onSuccess, onCancel }: EditSe
                 required
                 value={form.start_time}
                 onChange={(e) => setForm({ ...form, start_time: e.target.value })}
-                className="h-10 sm:h-11 text-xs sm:text-base bg-white border-2 border-blue-300 hover:border-blue-400 hover:bg-blue-50/70 focus:border-blue-500 focus:ring-blue-500/20 rounded-lg transition-all px-3 [color-scheme:light]"
+                className="w-full h-10 sm:h-11 text-xs sm:text-base bg-white border-2 border-blue-300 hover:border-blue-400 hover:bg-blue-50/70 focus:border-blue-500 focus:ring-blue-500/20 rounded-lg transition-all px-3 [color-scheme:light]"
                 style={{ color: '#1e3a8a' }}
               />
             </div>
@@ -272,7 +272,7 @@ export default function EditSessionForm({ session, onSuccess, onCancel }: EditSe
               </Popover>
             </div>
 
-            {/* Time Picker - PAKAI red-section-input! */}
+            {/* Time Picker - Red Section */}
             <div className="flex flex-col gap-2 sm:gap-3 flex-1">
               <Label htmlFor="end-time" className="text-xs sm:text-sm text-red-700 font-medium px-1">
                 Waktu
@@ -282,7 +282,7 @@ export default function EditSessionForm({ session, onSuccess, onCancel }: EditSe
                 id="end-time"
                 value={form.end_time}
                 onChange={(e) => setForm({ ...form, end_time: e.target.value })}
-                className="red-section-input h-10 sm:h-11 text-sm sm:text-base bg-white border-2 border-red-300 hover:border-red-400 hover:bg-red-50/70 focus:border-red-500 focus:ring-red-500/20 rounded-lg transition-all px-3 [color-scheme:light]"
+                className="w-full h-10 sm:h-11 text-sm sm:text-base bg-white border-2 border-red-300 hover:border-red-400 hover:bg-red-50/70 focus:border-red-500 focus:ring-red-500/20 rounded-lg transition-all px-3 [color-scheme:light]"
                 style={{ color: '#7f1d1d' }}
               />
             </div>
