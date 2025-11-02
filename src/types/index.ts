@@ -3,9 +3,9 @@ export interface Session {
   title: string
   description?: string
   location?: string
-  session_date: string      // 🆕 YYYY-MM-DD
-  start_time: string         // 🆕 HH:MM:SS (time only)
-  end_time?: string          // 🆕 HH:MM:SS (time only)
+  session_date: string     
+  start_time: string        
+  end_time?: string        
   qr_code: string
   is_active: boolean
   created_at: string

@@ -46,33 +46,47 @@
   background: #94a3b8;
 }
 
-/* KONSISTEN: All Input & Textarea Hover + Focus - BLUE ONLY */
+/* KONSISTEN: All Input & Textarea Hover + Focus */
 input,
 textarea,
 select {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-input:hover,
-textarea:hover,
-select:hover {
+/* Default hover/focus blue untuk semua input KECUALI yang di red section */
+input:not(.red-section-input):hover,
+textarea:not(.red-section-input):hover,
+select:not(.red-section-input):hover {
   border-color: #93c5fd !important;
   box-shadow: 0 0 0 1px #93c5fd !important;
 }
 
-input:focus,
-textarea:focus,
-select:focus {
+input:not(.red-section-input):focus,
+textarea:not(.red-section-input):focus,
+select:not(.red-section-input):focus {
   border-color: #3b82f6 !important;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
   outline: none !important;
 }
 
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible {
+input:not(.red-section-input):focus-visible,
+textarea:not(.red-section-input):focus-visible,
+select:not(.red-section-input):focus-visible {
   border-color: #3b82f6 !important;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+  outline: none !important;
+}
+
+/* RED section input hover/focus */
+.red-section-input:hover {
+  border-color: #fca5a5 !important;  /* red-300 */
+  box-shadow: 0 0 0 1px #fca5a5 !important;
+}
+
+.red-section-input:focus,
+.red-section-input:focus-visible {
+  border-color: #ef4444 !important;  /* red-500 */
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
   outline: none !important;
 }
 

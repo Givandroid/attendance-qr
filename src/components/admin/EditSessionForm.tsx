@@ -177,9 +177,9 @@ export default function EditSessionForm({ session, onSuccess, onCancel }: EditSe
                     type="button"
                     variant="outline"
                     id="start-date"
-                    className="justify-between font-normal bg-white border-2 border-blue-300 hover:border-blue-400 hover:bg-blue-50/70 h-10 sm:h-11 rounded-lg transition-all text-sm sm:text-base"
+                    className="justify-between font-normal bg-white border-2 border-blue-300 hover:border-blue-400 hover:bg-blue-50/70 h-10 sm:h-11 rounded-lg transition-all"
                   >
-                    <span className={startDate ? "text-blue-900" : "text-slate-500"}>
+                    <span className={`text-sm sm:text-base ${startDate ? "text-blue-900" : "text-slate-500"}`}>
                       {startDate ? format(startDate, 'dd MMM yyyy', { locale: localeId }) : "Pilih tanggal"}
                     </span>
                     <ChevronDownIcon className="w-4 h-4 text-blue-600" />
@@ -214,7 +214,8 @@ export default function EditSessionForm({ session, onSuccess, onCancel }: EditSe
                 required
                 value={form.start_time}
                 onChange={(e) => setForm({ ...form, start_time: e.target.value })}
-                className="h-10 sm:h-11 text-sm sm:text-base bg-white border-2 border-blue-300 hover:border-blue-400 hover:bg-blue-50/70 focus:border-blue-500 focus:ring-blue-200 rounded-lg transition-all text-blue-900"
+                className="h-10 sm:h-11 text-xs sm:text-base bg-white border-2 border-blue-300 hover:border-blue-400 hover:bg-blue-50/70 focus:border-blue-500 focus:ring-blue-500/20 rounded-lg transition-all px-3 [color-scheme:light]"
+                style={{ color: '#1e3a8a' }}
               />
             </div>
           </div>
@@ -240,9 +241,9 @@ export default function EditSessionForm({ session, onSuccess, onCancel }: EditSe
                     type="button"
                     variant="outline"
                     id="end-date"
-                    className="justify-between font-normal bg-white border-2 border-red-300 hover:border-red-400 hover:bg-red-50/70 h-10 sm:h-11 rounded-lg transition-all text-sm sm:text-base"
+                    className="justify-between font-normal bg-white border-2 border-red-300 hover:border-red-400 hover:bg-red-50/70 h-10 sm:h-11 rounded-lg transition-all"
                   >
-                    <span className={endDate ? "text-red-900" : "text-slate-500"}>
+                    <span className={`text-sm sm:text-base ${endDate ? "text-red-900" : "text-slate-500"}`}>
                       {endDate ? format(endDate, 'dd MMM yyyy', { locale: localeId }) : "Pilih tanggal"}
                     </span>
                     <ChevronDownIcon className="w-4 h-4 text-red-600" />
@@ -271,7 +272,7 @@ export default function EditSessionForm({ session, onSuccess, onCancel }: EditSe
               </Popover>
             </div>
 
-            {/* Time Picker */}
+            {/* Time Picker - PAKAI red-section-input! */}
             <div className="flex flex-col gap-2 sm:gap-3 flex-1">
               <Label htmlFor="end-time" className="text-xs sm:text-sm text-red-700 font-medium px-1">
                 Waktu
@@ -281,7 +282,8 @@ export default function EditSessionForm({ session, onSuccess, onCancel }: EditSe
                 id="end-time"
                 value={form.end_time}
                 onChange={(e) => setForm({ ...form, end_time: e.target.value })}
-                className="h-10 sm:h-11 text-sm sm:text-base bg-white border-2 border-red-300 hover:border-red-400 hover:bg-red-50/70 focus:border-red-500 focus:ring-red-200 rounded-lg transition-all text-red-900"
+                className="red-section-input h-10 sm:h-11 text-sm sm:text-base bg-white border-2 border-red-300 hover:border-red-400 hover:bg-red-50/70 focus:border-red-500 focus:ring-red-500/20 rounded-lg transition-all px-3 [color-scheme:light]"
+                style={{ color: '#7f1d1d' }}
               />
             </div>
           </div>

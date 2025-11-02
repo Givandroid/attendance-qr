@@ -21,8 +21,8 @@ export default function LandingPage() {
           </div>
           <Button
             onClick={() => router.push('/admin/login')}
-            variant="ghost"
-            className="text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium transition-all duration-300 rounded-lg"
+            variant="outline"
+            className="border-2 border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300 hover:scale-105 rounded-xl transition-all duration-300 flex-shrink-0"
           >
             Admin Login
           </Button>

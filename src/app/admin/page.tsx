@@ -141,8 +141,6 @@ export default function AdminDashboard() {
   )
   const activeSessions = sessions.filter((s) => s.is_active).length
 
-  const hasActiveFilters = searchQuery !== '' || filterStatus !== 'all'
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -307,19 +305,6 @@ export default function AdminDashboard() {
                 >
                   Ditutup
                 </Button>
-
-                {/* Clear Filters */}
-                {hasActiveFilters && (
-                  <Button
-                    onClick={clearFilters}
-                    variant="outline"
-                    size="sm"
-                    className="border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 hover:scale-105 rounded-xl transition-all duration-300 flex-shrink-0"
-                  >
-                    <X className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5" />
-                    Clear
-                  </Button>
-                )}
               </div>
             </div>
           </Card>
