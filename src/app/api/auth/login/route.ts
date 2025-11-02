@@ -4,7 +4,6 @@ import { cookies } from 'next/headers'
 export async function POST(request: Request) {
   const { password } = await request.json()
 
-  // Password dari environment variable - JANGAN HARDCODE!
   const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
 
   if (!ADMIN_PASSWORD) {
