@@ -187,6 +187,8 @@ export default function AttendancePage() {
                   <p className="text-xs text-gray-500 font-medium">Waktu Selesai</p>
                   <p className="font-medium">
                     {new Date(session.end_time).toLocaleString('id-ID', {
+                      day: 'numeric',
+                      month: 'long',
                       hour: '2-digit',
                       minute: '2-digit'
                     })}
