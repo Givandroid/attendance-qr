@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import QRCode from 'qrcode'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -21,11 +21,28 @@ export default function QRCodeDisplay({
   }
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [qrSize, setQrSize] = useState(280)
+
+  useEffect(() => {
+    const updateSize = () => {
+      if (containerRef.current) {
+        const containerWidth = containerRef.current.offsetWidth
+        const padding = 32 // p-4 = 16px each side
+        const maxSize = Math.min(containerWidth - padding, 280)
+        setQrSize(maxSize)
+      }
+    }
+
+    updateSize()
+    window.addEventListener('resize', updateSize)
+    return () => window.removeEventListener('resize', updateSize)
+  }, [])
 
   useEffect(() => {
     if (canvasRef.current) {
       QRCode.toCanvas(canvasRef.current, url, {
-        width: 280,
+        width: qrSize,
         margin: 2,
         color: {
           dark: '#1e293b',
@@ -33,7 +50,7 @@ export default function QRCodeDisplay({
         }
       })
     }
-  }, [url])
+  }, [url, qrSize])
 
   const downloadQR = () => {
     const qrCanvas = canvasRef.current
@@ -211,25 +228,25 @@ export default function QRCodeDisplay({
   }
 
   return (
-    <Card className="p-6 border border-gray-200 rounded-2xl bg-white hover:border-blue-200 hover:shadow-lg transition-all duration-300">
+    <Card className="p-4 sm:p-6 border border-gray-200 rounded-2xl bg-white hover:border-blue-200 hover:shadow-lg transition-all duration-300 w-full max-w-full">
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+        <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
           <QrIcon className="w-5 h-5 text-blue-600" />
         </div>
-        <h3 className="font-bold text-gray-900">QR Code Absensi</h3>
+        <h3 className="font-bold text-gray-900 text-sm sm:text-base">QR Code Absensi</h3>
       </div>
       
-      <div className="bg-white p-4 rounded-xl border-2 border-gray-200 mb-4">
-        <canvas ref={canvasRef} className="mx-auto" />
+      <div ref={containerRef} className="bg-white p-3 sm:p-4 rounded-xl border-2 border-gray-200 mb-4 w-full flex justify-center">
+        <canvas ref={canvasRef} className="max-w-full h-auto" />
       </div>
 
-      <p className="text-sm text-gray-600 mb-4 text-center">
+      <p className="text-xs sm:text-sm text-gray-600 mb-4 text-center">
         Scan QR code untuk melakukan absensi
       </p>
 
       <Button
         onClick={downloadQR}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl hover:scale-[1.02] transition-all duration-300"
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl hover:scale-[1.02] transition-all duration-300 text-sm sm:text-base h-10 sm:h-11"
       >
         <Download className="w-4 h-4 mr-2" />
         Download QR Code

@@ -73,7 +73,6 @@ export default function AttendancePage() {
       if (error) throw error
 
       setSuccess(true)
-      setTimeout(() => router.push('/'), 3000)
     } catch (error) {
       alert('❌ Gagal melakukan absensi')
     } finally {

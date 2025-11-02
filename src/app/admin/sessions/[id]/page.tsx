@@ -387,7 +387,7 @@ export default function SessionMonitorPage() {
 
             {/* QR Code */}
             {session.is_active && (
-              <div className="w-full">
+              <div className="w-full overflow-hidden">
                 <QRCodeDisplay 
                   url={session.qr_code} 
                   title={session.title}
