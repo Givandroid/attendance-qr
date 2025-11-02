@@ -2,76 +2,101 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { Session, Attendance } from '@/types'
 
-export const exportToPDF = (session: Session, attendances: Attendance[]) => {
+export const exportToPDF = async (session: Session, attendances: Attendance[]) => {
   const doc = new jsPDF()
   
   // Fungsi untuk menambahkan kop surat (hanya halaman pertama)
-  const addLetterhead = () => {
-    // Logo placeholder (koordinat untuk logo di kiri)
-    // Jika ada logo, bisa ditambahkan dengan doc.addImage()
-    
-    // Header text
+  const addLetterhead = async () => {
+    try {
+      const logoUrl = `${window.location.origin}/assets/logo-imigrasi.png`
+      
+      const response = await fetch(logoUrl)
+      if (response.ok) {
+        const blob = await response.blob()
+        const reader = new FileReader()
+        
+        await new Promise((resolve) => {
+          reader.onloadend = () => {
+            const base64data = reader.result as string
+            doc.addImage(base64data, 'PNG', 14, 8, 20, 20)
+            resolve(null)
+          }
+          reader.onerror = resolve
+          reader.readAsDataURL(blob)
+        })
+      } else {
+        console.log('Logo tidak ditemukan di:', logoUrl)
+      }
+    } catch (error) {
+      console.log('Error loading logo:', error)
+    }
+  
     doc.setFontSize(9)
     doc.setFont('helvetica', 'bold')
     
-    // Bagian atas - Nama Kementerian
-    doc.text('KEMENTERIAN IMIGRASI DAN PEMASYARAKATAN REPUBLIK INDONESIA', 105, 12, { align: 'center' })
+    doc.text('KEMENTERIAN IMIGRASI DAN PEMASYARAKATAN REPUBLIK INDONESIA', 105, 10, { align: 'center' })
     
     doc.setFontSize(10)
-    doc.text('DIREKTORAT JENDERAL IMIGRASI', 105, 17, { align: 'center' })
-    doc.text('KANTOR WILAYAH KALIMANTAN TIMUR', 105, 22, { align: 'center' })
-    doc.text('KANTOR IMIGRASI KELAS II TPI TARAKAN', 105, 27, { align: 'center' })
+    doc.text('DIREKTORAT JENDERAL IMIGRASI', 105, 14, { align: 'center' })
+    doc.text('KANTOR WILAYAH KALIMANTAN TIMUR', 105, 18, { align: 'center' })
+    doc.text('KANTOR IMIGRASI KELAS II TPI TARAKAN', 105, 22, { align: 'center' })
     
-    // Alamat dan kontak
     doc.setFontSize(8)
     doc.setFont('helvetica', 'normal')
-    doc.text('Jl. P. Sumatera No.1, Kec Tarakan Tengah, Kota Tarakan, Kalimantan Utara', 105, 33, { align: 'center' })
-    doc.text('Telepon: 0811-8773-337, Faxsimili: -', 105, 37, { align: 'center' })
-    doc.text('Laman: tarakan.imigrasi.go.id, Pos-el: kanim_tarakan@imigrasi.go.id', 105, 41, { align: 'center' })
+    doc.text('Jl. P. Sumatera No.1, Kec Tarakan Tengah, Kota Tarakan, Kalimantan Utara', 105, 27, { align: 'center' })
+    doc.text('Telepon: 0811-8773-337, Faxsimili: -', 105, 31, { align: 'center' })
+    doc.text('Laman: tarakan.imigrasi.go.id, Pos-el: kanim_tarakan@imigrasi.go.id', 105, 35, { align: 'center' })
     
     // Garis pembatas
     doc.setLineWidth(0.8)
-    doc.line(14, 44, 196, 44)
+    doc.line(14, 38, 196, 38)
     doc.setLineWidth(0.3)
-    doc.line(14, 45.5, 196, 45.5)
+    doc.line(14, 39.5, 196, 39.5)
   }
   
-  // Tambahkan kop surat di halaman pertama
-  addLetterhead()
+  await addLetterhead()
   
-  // Judul Laporan
   doc.setFontSize(12)
   doc.setFont('helvetica', 'bold')
-  doc.text('LAPORAN DAFTAR HADIR', 105, 52, { align: 'center' })
+  doc.text('LAPORAN DAFTAR HADIR', 105, 47, { align: 'center' })
   
-  // Data Sesi
+  const boxStartY = 54
+  const boxHeight = 38 
+  doc.setDrawColor(200)
+  doc.setFillColor(248, 249, 250)
+  doc.roundedRect(14, boxStartY, 182, boxHeight, 2, 2, 'FD')
+  
   doc.setFontSize(9)
-  doc.setFont('helvetica', 'normal')
-  let yPos = 60
+  let yPos = boxStartY + 6
+  const labelX = 18
+  const valueX = 50
   
   doc.setFont('helvetica', 'bold')
-  doc.text('Judul Rapat', 14, yPos)
+  doc.text('Judul Rapat', labelX, yPos)
   doc.setFont('helvetica', 'normal')
-  doc.text(`: ${session.title}`, 45, yPos)
-  yPos += 5
+  doc.text(`: ${session.title}`, valueX, yPos)
+  yPos += 6
   
+  // Deskripsi
   if (session.description) {
     doc.setFont('helvetica', 'bold')
-    doc.text('Deskripsi', 14, yPos)
+    doc.text('Deskripsi', labelX, yPos)
     doc.setFont('helvetica', 'normal')
-    const descLines = doc.splitTextToSize(`: ${session.description}`, 150)
-    doc.text(descLines, 45, yPos)
-    yPos += (descLines.length * 5)
+    const descLines = doc.splitTextToSize(`: ${session.description}`, 140)
+    doc.text(descLines, valueX, yPos)
+    yPos += Math.min(descLines.length * 5, 12) 
   }
   
+  // Lokasi
   if (session.location) {
     doc.setFont('helvetica', 'bold')
-    doc.text('Lokasi', 14, yPos)
+    doc.text('Lokasi', labelX, yPos)
     doc.setFont('helvetica', 'normal')
-    doc.text(`: ${session.location}`, 45, yPos)
-    yPos += 5
+    doc.text(`: ${session.location}`, valueX, yPos)
+    yPos += 6
   }
   
+  // Hari/Tanggal
   const startDate = new Date(session.start_time).toLocaleDateString('id-ID', {
     weekday: 'long',
     year: 'numeric',
@@ -92,59 +117,83 @@ export const exportToPDF = (session: Session, attendances: Attendance[]) => {
   }
   
   doc.setFont('helvetica', 'bold')
-  doc.text('Hari/Tanggal', 14, yPos)
+  doc.text('Hari/Tanggal', labelX, yPos)
   doc.setFont('helvetica', 'normal')
-  doc.text(`: ${startDate}`, 45, yPos)
-  yPos += 5
+  doc.text(`: ${startDate}`, valueX, yPos)
+  yPos += 6
   
+  // Waktu
   doc.setFont('helvetica', 'bold')
-  doc.text('Waktu', 14, yPos)
+  doc.text('Waktu', labelX, yPos)
   doc.setFont('helvetica', 'normal')
-  doc.text(`: ${startTime} - ${endTime} WIB`, 45, yPos)
-  yPos += 5
+  doc.text(`: ${startTime} - ${endTime} WIB`, valueX, yPos)
+  yPos += 6
   
+  // Jumlah Peserta
   doc.setFont('helvetica', 'bold')
-  doc.text('Jumlah Peserta', 14, yPos)
+  doc.text('Jumlah Peserta', labelX, yPos)
   doc.setFont('helvetica', 'normal')
-  doc.text(`: ${attendances.length} orang`, 45, yPos)
-  yPos += 8
+  doc.text(`: ${attendances.length} orang`, valueX, yPos)
+  
+  const tableStartY = boxStartY + boxHeight + 5 
   
   // Tabel Kehadiran
   const tableData = attendances.map((att, index) => [
     index + 1,
-    att.full_name,
-    att.institution,
-    att.position,
-    '' // Kolom tanda tangan kosong
+    att.full_name || '-',
+    att.institution || '-',
+    att.position || '-',
+    '' // Kolom tanda tangan kosong untuk TTD manual
   ])
   
   autoTable(doc, {
-    startY: yPos,
+    startY: tableStartY,
     head: [['No', 'Nama Lengkap', 'Instansi', 'Jabatan', 'Tanda Tangan']],
     body: tableData,
     theme: 'grid',
     headStyles: {
       fillColor: [41, 128, 185],
-      textColor: 255,
+      textColor: [255, 255, 255],
       fontStyle: 'bold',
       halign: 'center',
-      fontSize: 9
+      fontSize: 9,
+      lineColor: [200, 200, 200], 
+      lineWidth: 0.3,
+      cellPadding: 3 
     },
     styles: {
       fontSize: 8,
-      cellPadding: 2,
-      overflow: 'linebreak'
+      cellPadding: 3,
+      overflow: 'linebreak',
+      lineColor: [200, 200, 200],
+      lineWidth: 0.3,
+      valign: 'middle' 
     },
     columnStyles: {
-      0: { cellWidth: 10, halign: 'center' },
-      1: { cellWidth: 50 },
-      2: { cellWidth: 45 },
-      3: { cellWidth: 40 },
-      4: { cellWidth: 35, halign: 'center', minCellHeight: 10 }
+      0: { 
+        cellWidth: 12, 
+        halign: 'center'
+      },
+      1: { 
+        cellWidth: 55
+      },
+      2: { 
+        cellWidth: 45
+      },
+      3: { 
+        cellWidth: 38
+      },
+      4: { 
+        cellWidth: 30, 
+        halign: 'center',
+        minCellHeight: 12
+      }
     },
     // Hanya tampilkan header di halaman pertama
     showHead: 'firstPage',
-    margin: { top: 10, left: 14, right: 14 }
+    margin: { top: 10, left: 14, right: 14 },
+    didDrawCell: (data) => {
+    }
   })
   
   // Footer dengan nomor halaman
