@@ -179,7 +179,9 @@ export const exportToPDF = async (session: Session, attendances: Attendance[]) =
       }
     },
     showHead: 'firstPage',
-    margin: { top: 10, left: 14, right: 14 },
+    margin: { top: 10, left: 14, right: 14, bottom: 20 },
+    pageBreak: 'auto',
+    rowPageBreak: 'avoid',
     // Tambahkan signature di setiap cell
     didDrawCell: (data) => {
       if (data.column.index === 4 && data.section === 'body') {
