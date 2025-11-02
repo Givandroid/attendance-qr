@@ -38,7 +38,6 @@ export default function SessionMonitorPage() {
       // Fetch data first (parallel queries)
       await fetchSessionData()
       
-      // Setup realtime subscription after data is loaded
       channel = supabase
         .channel('attendances-changes')
         .on(
@@ -50,7 +49,7 @@ export default function SessionMonitorPage() {
             filter: `session_id=eq.${params.id}`
           },
           (payload) => {
-            setAttendances(prev => [payload.new as Attendance, ...prev])
+            setAttendances(prev => [...prev, payload.new as Attendance])
           }
         )
         .subscribe()
@@ -67,7 +66,6 @@ export default function SessionMonitorPage() {
 
   const fetchSessionData = async () => {
     try {
-      // PARALLEL QUERIES - Much faster!
       const [sessionResult, attendanceResult] = await Promise.all([
         supabase
           .from('sessions')
@@ -78,7 +76,7 @@ export default function SessionMonitorPage() {
           .from('attendances')
           .select('*')
           .eq('session_id', params.id)
-          .order('checked_in_at', { ascending: false })
+          .order('checked_in_at', { ascending: true })
       ])
 
       if (sessionResult.error) throw sessionResult.error
@@ -394,7 +392,7 @@ export default function SessionMonitorPage() {
                       <div className="flex items-start gap-4">
                         <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-blue-600 transition-colors">
                           <span className="font-bold text-blue-600 group-hover:text-white transition-colors">
-                            {attendances.length - index}
+                            {index + 1}
                           </span>
                         </div>
 

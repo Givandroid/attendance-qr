@@ -150,7 +150,7 @@ export default function AttendancePage() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid md:grid-cols-3 gap-4">
             {session.location && (
               <div className="flex items-center gap-3 text-gray-700">
                 <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
@@ -167,7 +167,7 @@ export default function AttendancePage() {
                 <Clock className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-xs text-gray-500 font-medium">Waktu</p>
+                <p className="text-xs text-gray-500 font-medium">Waktu Mulai</p>
                 <p className="font-medium">
                   {new Date(session.start_time).toLocaleString('id-ID', {
                     day: 'numeric',
@@ -178,6 +178,22 @@ export default function AttendancePage() {
                 </p>
               </div>
             </div>
+            {session.end_time && (
+              <div className="flex items-center gap-3 text-gray-700">
+                <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 font-medium">Waktu Selesai</p>
+                  <p className="font-medium">
+                    {new Date(session.end_time).toLocaleString('id-ID', {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </Card>
 
@@ -190,7 +206,7 @@ export default function AttendancePage() {
             <div className="space-y-2">
               <Label className="text-gray-700 font-medium flex items-center gap-2">
                 <UserCheck className="w-4 h-4 text-blue-600" />
-                Nama Lengkap *
+                Nama Lengkap <span className="text-red-600">*</span>
               </Label>
               <Input
                 required
@@ -205,7 +221,7 @@ export default function AttendancePage() {
             <div className="space-y-2">
               <Label className="text-gray-700 font-medium flex items-center gap-2">
                 <Building className="w-4 h-4 text-blue-600" />
-                Instansi / Perusahaan *
+                Instansi / Perusahaan <span className="text-red-600">*</span>
               </Label>
               <Input
                 required
@@ -220,7 +236,7 @@ export default function AttendancePage() {
             <div className="space-y-2">
               <Label className="text-gray-700 font-medium flex items-center gap-2">
                 <Briefcase className="w-4 h-4 text-blue-600" />
-                Jabatan *
+                Jabatan <span className="text-red-600">*</span>
               </Label>
               <Input
                 required
@@ -235,7 +251,7 @@ export default function AttendancePage() {
             <div className="space-y-2">
               <Label className="text-gray-700 font-medium flex items-center gap-2">
                 <Phone className="w-4 h-4 text-blue-600" />
-                Nomor Telepon *
+                Nomor Telepon <span className="text-red-600">*</span>
               </Label>
               <Input
                 required
@@ -270,7 +286,7 @@ export default function AttendancePage() {
             </Button>
 
             <p className="text-sm text-gray-500 text-center">
-              * Wajib diisi
+              <span className="text-red-600">*</span> Wajib diisi
             </p>
           </div>
         </Card>
