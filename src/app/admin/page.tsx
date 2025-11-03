@@ -21,8 +21,88 @@ import {
   Trash2,
   Search,
   Filter,
-  X
+  X,
+  AlertTriangle
 } from 'lucide-react'
+
+// Custom Confirmation Modal Component
+function ConfirmModal({ 
+  isOpen, 
+  onClose, 
+  onConfirm, 
+  title, 
+  message, 
+  confirmText = 'Konfirmasi',
+  cancelText = 'Batal',
+  type = 'danger' // 'danger' or 'warning'
+}: {
+  isOpen: boolean
+  onClose: () => void
+  onConfirm: () => void
+  title: string
+  message: string
+  confirmText?: string
+  cancelText?: string
+  type?: 'danger' | 'warning'
+}) {
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      
+      {/* Modal */}
+      <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in zoom-in-95 duration-200">
+        {/* Icon */}
+        <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 ${
+          type === 'danger' ? 'bg-red-100' : 'bg-yellow-100'
+        }`}>
+          <AlertTriangle className={`w-6 h-6 ${
+            type === 'danger' ? 'text-red-600' : 'text-yellow-600'
+          }`} />
+        </div>
+
+        {/* Title */}
+        <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
+          {title}
+        </h3>
+
+        {/* Message */}
+        <p className="text-gray-600 text-center mb-6 leading-relaxed">
+          {message}
+        </p>
+
+        {/* Actions */}
+        <div className="flex gap-3">
+          <Button
+            onClick={onClose}
+            variant="outline"
+            className="flex-1 border-2 border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:scale-105 rounded-xl transition-all duration-300"
+          >
+            {cancelText}
+          </Button>
+          <Button
+            onClick={() => {
+              onConfirm()
+              onClose()
+            }}
+            className={`flex-1 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 ${
+              type === 'danger'
+                ? 'bg-red-600 hover:bg-red-700 text-white shadow-red-500/20 hover:shadow-red-500/30'
+                : 'bg-yellow-600 hover:bg-yellow-700 text-white shadow-yellow-500/20 hover:shadow-yellow-500/30'
+            }`}
+          >
+            {confirmText}
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function AdminDashboard() {
   // Force scrollbar to always show
@@ -32,6 +112,7 @@ export default function AdminDashboard() {
       document.documentElement.style.overflowY = ''
     }
   }, [])
+  
   const router = useRouter()
   const [sessions, setSessions] = useState<Session[]>([])
   const [filteredSessions, setFilteredSessions] = useState<Session[]>([])
@@ -41,6 +122,14 @@ export default function AdminDashboard() {
   // Search & Filter States
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'closed'>('all')
+
+  // Modal States
+  const [logoutModal, setLogoutModal] = useState(false)
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; sessionId: string; sessionTitle: string }>({
+    isOpen: false,
+    sessionId: '',
+    sessionTitle: ''
+  })
 
   useEffect(() => {
     fetchSessions()
@@ -102,13 +191,7 @@ export default function AdminDashboard() {
     router.refresh()
   }
 
-  const handleDeleteSession = async (sessionId: string, sessionTitle: string) => {
-    const confirmed = confirm(
-      `Yakin ingin menghapus sesi "${sessionTitle}"?\n\nSemua data absensi akan ikut terhapus dan tidak dapat dikembalikan.`
-    )
-
-    if (!confirmed) return
-
+  const handleDeleteSession = async (sessionId: string) => {
     setDeleting(sessionId)
     try {
       const { error: attendanceError } = await supabase
@@ -125,7 +208,6 @@ export default function AdminDashboard() {
 
       if (sessionError) throw sessionError
 
-      alert('✅ Sesi berhasil dihapus!')
       await fetchSessions()
     } catch (error) {
       console.error('Error deleting session:', error)
@@ -154,6 +236,29 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Modals */}
+      <ConfirmModal
+        isOpen={logoutModal}
+        onClose={() => setLogoutModal(false)}
+        onConfirm={handleLogout}
+        title="Konfirmasi Logout"
+        message="Apakah Anda yakin ingin keluar dari dashboard admin?"
+        confirmText="Ya, Logout"
+        cancelText="Batal"
+        type="warning"
+      />
+
+      <ConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, sessionId: '', sessionTitle: '' })}
+        onConfirm={() => handleDeleteSession(deleteModal.sessionId)}
+        title="Hapus Sesi Rapat"
+        message={`Yakin ingin menghapus sesi "${deleteModal.sessionTitle}"? Semua data absensi akan ikut terhapus dan tidak dapat dikembalikan.`}
+        confirmText="Ya, Hapus"
+        cancelText="Batal"
+        type="danger"
+      />
+
       {/* Header - Responsive */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-40 backdrop-blur-sm bg-white/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
@@ -169,7 +274,7 @@ export default function AdminDashboard() {
             </div>
 
             <Button
-              onClick={handleLogout}
+              onClick={() => setLogoutModal(true)}
               variant="outline"
               size="sm"
               className="border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 hover:scale-105 rounded-xl transition-all duration-300 flex-shrink-0"
@@ -434,7 +539,11 @@ export default function AdminDashboard() {
                         Monitor
                       </Button>
                       <Button
-                        onClick={() => handleDeleteSession(session.id, session.title)}
+                        onClick={() => setDeleteModal({ 
+                          isOpen: true, 
+                          sessionId: session.id, 
+                          sessionTitle: session.title 
+                        })}
                         disabled={deleting === session.id}
                         variant="outline"
                         className="border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 rounded-xl hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
@@ -523,7 +632,11 @@ export default function AdminDashboard() {
                         Monitor
                       </Button>
                       <Button
-                        onClick={() => handleDeleteSession(session.id, session.title)}
+                        onClick={() => setDeleteModal({ 
+                          isOpen: true, 
+                          sessionId: session.id, 
+                          sessionTitle: session.title 
+                        })}
                         disabled={deleting === session.id}
                         variant="outline"
                         className="border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 px-3"

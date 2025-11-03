@@ -20,8 +20,94 @@ import {
   Clock,
   XCircle,
   CheckCircle,
-  Activity
+  Activity,
+  AlertTriangle
 } from 'lucide-react'
+
+// Custom Confirmation Modal Component
+function ConfirmModal({ 
+  isOpen, 
+  onClose, 
+  onConfirm, 
+  title, 
+  message, 
+  confirmText = 'Konfirmasi',
+  cancelText = 'Batal',
+  type = 'danger' // 'danger' or 'warning' or 'success'
+}: {
+  isOpen: boolean
+  onClose: () => void
+  onConfirm: () => void
+  title: string
+  message: string
+  confirmText?: string
+  cancelText?: string
+  type?: 'danger' | 'warning' | 'success'
+}) {
+  if (!isOpen) return null
+
+  const iconBg = type === 'danger' ? 'bg-red-100' : type === 'success' ? 'bg-green-100' : 'bg-yellow-100'
+  const iconColor = type === 'danger' ? 'text-red-600' : type === 'success' ? 'text-green-600' : 'text-yellow-600'
+  const buttonBg = type === 'danger' 
+    ? 'bg-red-600 hover:bg-red-700 shadow-red-500/20 hover:shadow-red-500/30'
+    : type === 'success'
+    ? 'bg-green-600 hover:bg-green-700 shadow-green-500/20 hover:shadow-green-500/30'
+    : 'bg-yellow-600 hover:bg-yellow-700 shadow-yellow-500/20 hover:shadow-yellow-500/30'
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      
+      {/* Modal */}
+      <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in zoom-in-95 duration-200">
+        {/* Icon */}
+        <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 ${iconBg}`}>
+          {type === 'success' ? (
+            <CheckCircle className={`w-6 h-6 ${iconColor}`} />
+          ) : type === 'danger' ? (
+            <XCircle className={`w-6 h-6 ${iconColor}`} />
+          ) : (
+            <AlertTriangle className={`w-6 h-6 ${iconColor}`} />
+          )}
+        </div>
+
+        {/* Title */}
+        <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
+          {title}
+        </h3>
+
+        {/* Message */}
+        <p className="text-gray-600 text-center mb-6 leading-relaxed">
+          {message}
+        </p>
+
+        {/* Actions */}
+        <div className="flex gap-3">
+          <Button
+            onClick={onClose}
+            variant="outline"
+            className="flex-1 border-2 border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:scale-105 rounded-xl transition-all duration-300"
+          >
+            {cancelText}
+          </Button>
+          <Button
+            onClick={() => {
+              onConfirm()
+              onClose()
+            }}
+            className={`flex-1 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 text-white ${buttonBg}`}
+          >
+            {confirmText}
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function SessionMonitorPage() {
   const params = useParams()
@@ -29,6 +115,15 @@ export default function SessionMonitorPage() {
   const [session, setSession] = useState<Session | null>(null)
   const [attendances, setAttendances] = useState<Attendance[]>([])
   const [loading, setLoading] = useState(true)
+  
+  // Modal State
+  const [statusModal, setStatusModal] = useState<{
+    isOpen: boolean
+    action: 'close' | 'open' | null
+  }>({
+    isOpen: false,
+    action: null
+  })
 
   useEffect(() => {
     let channel: any = null
@@ -94,14 +189,6 @@ export default function SessionMonitorPage() {
   const toggleSessionStatus = async () => {
     if (!session) return
 
-    const confirmed = confirm(
-      session.is_active 
-        ? 'Yakin ingin menutup sesi ini?' 
-        : 'Yakin ingin membuka kembali sesi ini?'
-    )
-
-    if (!confirmed) return
-
     try {
       const { error } = await supabase
         .from('sessions')
@@ -111,10 +198,17 @@ export default function SessionMonitorPage() {
       if (error) throw error
 
       setSession({ ...session, is_active: !session.is_active })
-      alert(session.is_active ? '🔴 Sesi ditutup' : '✅ Sesi dibuka kembali')
     } catch (error) {
       alert('❌ Gagal mengubah status sesi')
     }
+  }
+
+  const handleStatusToggle = () => {
+    if (!session) return
+    setStatusModal({
+      isOpen: true,
+      action: session.is_active ? 'close' : 'open'
+    })
   }
 
   if (loading) {
@@ -163,6 +257,22 @@ export default function SessionMonitorPage() {
 
   return (
     <>
+      {/* Modal Konfirmasi */}
+      <ConfirmModal
+        isOpen={statusModal.isOpen}
+        onClose={() => setStatusModal({ isOpen: false, action: null })}
+        onConfirm={toggleSessionStatus}
+        title={statusModal.action === 'close' ? 'Tutup Sesi?' : 'Buka Sesi Kembali?'}
+        message={
+          statusModal.action === 'close'
+            ? 'Setelah sesi ditutup, peserta tidak dapat lagi melakukan absensi. Anda masih dapat membuka kembali sesi ini nanti.'
+            : 'Sesi akan dibuka kembali dan peserta dapat melakukan absensi. QR Code akan aktif kembali.'
+        }
+        confirmText={statusModal.action === 'close' ? 'Ya, Tutup Sesi' : 'Ya, Buka Sesi'}
+        cancelText="Batal"
+        type={statusModal.action === 'close' ? 'danger' : 'success'}
+      />
+
       {/* Header - Fixed Sticky with Transparent Background */}
       <header className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-b border-gray-200 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
@@ -195,12 +305,12 @@ export default function SessionMonitorPage() {
               </Button>
               
               <Button
-                onClick={toggleSessionStatus}
+                onClick={handleStatusToggle}
                 size="sm"
                 className={`${
                   session.is_active
-                    ? 'bg-red-600 hover:bg-red-700'
-                    : 'bg-green-600 hover:bg-green-700'
+                    ? 'bg-red-600 hover:bg-red-700 shadow-lg shadow-red-500/20 hover:shadow-xl hover:shadow-red-500/30'
+                    : 'bg-green-600 hover:bg-green-700 shadow-lg shadow-green-500/20 hover:shadow-xl hover:shadow-green-500/30'
                 } text-white rounded-xl hover:scale-105 transition-all duration-300 flex-1 min-w-0`}
               >
                 {session.is_active ? (
@@ -247,7 +357,7 @@ export default function SessionMonitorPage() {
               </Button>
               
               <Button
-                onClick={toggleSessionStatus}
+                onClick={handleStatusToggle}
                 className={`${
                   session.is_active
                     ? 'bg-red-600 hover:bg-red-700 shadow-lg shadow-red-500/20 hover:shadow-xl hover:shadow-red-500/30'
