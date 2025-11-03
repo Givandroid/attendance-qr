@@ -44,7 +44,7 @@ export const exportToPDF = async (session: Session, attendances: Attendance[]) =
     doc.setFontSize(8)
     doc.setFont('helvetica', 'normal')
     doc.text('Jl. P. Sumatera No.1, Kec Tarakan Tengah, Kota Tarakan, Kalimantan Utara', 105, 26, { align: 'center' })  
-    doc.text('Telepon: 0811-8773-337, Faxsimili: -', 105, 30, { align: 'center' }) 
+    doc.text('Telepon: 0811-8773-337', 105, 30, { align: 'center' }) 
     doc.text('Laman: tarakan.imigrasi.go.id, Pos-el: kanim_tarakan@imigrasi.go.id', 105, 34, { align: 'center' })  
     
     // Garis pembatas
@@ -56,22 +56,41 @@ export const exportToPDF = async (session: Session, attendances: Attendance[]) =
   
   await addLetterhead()
   
-  doc.setFontSize(12)
-  doc.setFont('helvetica', 'bold')
-  doc.text('LAPORAN DAFTAR HADIR', 105, 47, { align: 'center' })
-  
-  const boxStartY = 54
-  const boxHeight = 39 
-  doc.setDrawColor(200)
-  doc.setFillColor(248, 249, 250)
-  doc.roundedRect(14, boxStartY, 182, boxHeight, 2, 2, 'FD')
-  
-  doc.setFontSize(9)
-  let yPos = boxStartY + 6
+  // Hitung dulu tinggi konten yang dibutuhkan
+  const boxStartY = 47
   const labelX = 18
   const valueX = 50
+  let contentHeight = 5 // Padding atas
   
+  // Hitung tinggi judul rapat
+  contentHeight += 5
+  
+  // Hitung tinggi deskripsi jika ada
+  if (session.description) {
+    const descLines = doc.splitTextToSize(`: ${session.description}`, 140)
+    contentHeight += descLines.length * 4
+  }
+  
+  // Hitung tinggi lokasi jika ada
+  if (session.location) {
+    contentHeight += 5
+  }
+  
+  // Hitung tinggi hari/tanggal, waktu, jumlah peserta (masing-masing 5)
+  contentHeight += 5 + 5 + 5 + 3 // +3 untuk padding bawah
+  
+  // GAMBAR BOX DULU
+  doc.setDrawColor(200)
+  doc.setFillColor(248, 249, 250)
+  doc.roundedRect(14, boxStartY, 182, contentHeight, 2, 2, 'FD')
+  
+  // BARU TULIS TEKS DI ATAS BOX
+  doc.setFontSize(9)
+  let yPos = boxStartY + 6
+  
+  // Judul Rapat
   doc.setFont('helvetica', 'bold')
+  doc.setTextColor(0, 0, 0)
   doc.text('Judul Rapat', labelX, yPos)
   doc.setFont('helvetica', 'normal')
   doc.text(`: ${session.title}`, valueX, yPos)
@@ -84,7 +103,7 @@ export const exportToPDF = async (session: Session, attendances: Attendance[]) =
     doc.setFont('helvetica', 'normal')
     const descLines = doc.splitTextToSize(`: ${session.description}`, 140)
     doc.text(descLines, valueX, yPos)
-    yPos += 6 
+    yPos += descLines.length * 4.5
   }
   
   // Lokasi
@@ -124,7 +143,7 @@ export const exportToPDF = async (session: Session, attendances: Attendance[]) =
   doc.setFont('helvetica', 'normal')
   doc.text(`: ${attendances.length} orang`, valueX, yPos)
   
-  const tableStartY = boxStartY + boxHeight + 5 
+  const tableStartY = boxStartY + contentHeight + 8
   
   // Tabel Kehadiran 
   const tableData = attendances.map((att, index) => [
