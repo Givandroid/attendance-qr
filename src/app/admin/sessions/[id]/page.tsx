@@ -33,7 +33,7 @@ function ConfirmModal({
   message, 
   confirmText = 'Konfirmasi',
   cancelText = 'Batal',
-  type = 'danger' // 'danger' or 'warning' or 'success'
+  type = 'danger' 
 }: {
   isOpen: boolean
   onClose: () => void

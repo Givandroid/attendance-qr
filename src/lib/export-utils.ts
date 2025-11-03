@@ -55,36 +55,33 @@ export const exportToPDF = async (session: Session, attendances: Attendance[]) =
   }
   
   await addLetterhead()
+
+  doc.setFontSize(12)
+  doc.setFont('helvetica', 'bold')
+  doc.text('DAFTAR HADIR', 105, 47, { align: 'center' })
   
-  // Hitung dulu tinggi konten yang dibutuhkan
-  const boxStartY = 47
+  const boxStartY = 51
   const labelX = 18
   const valueX = 50
-  let contentHeight = 5 // Padding atas
+  let contentHeight = 5 
   
-  // Hitung tinggi judul rapat
   contentHeight += 5
   
-  // Hitung tinggi deskripsi jika ada
   if (session.description) {
     const descLines = doc.splitTextToSize(`: ${session.description}`, 140)
     contentHeight += descLines.length * 4
   }
   
-  // Hitung tinggi lokasi jika ada
   if (session.location) {
     contentHeight += 5
   }
   
-  // Hitung tinggi hari/tanggal, waktu, jumlah peserta (masing-masing 5)
-  contentHeight += 5 + 5 + 5 + 3 // +3 untuk padding bawah
+  contentHeight += 5 + 5 + 5 + 3 
   
-  // GAMBAR BOX DULU
   doc.setDrawColor(200)
   doc.setFillColor(248, 249, 250)
   doc.roundedRect(14, boxStartY, 182, contentHeight, 2, 2, 'FD')
   
-  // BARU TULIS TEKS DI ATAS BOX
   doc.setFontSize(9)
   let yPos = boxStartY + 6
   
