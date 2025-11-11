@@ -563,10 +563,10 @@ export default function AdminDashboard() {
                               </div>
                               
                               <div className="flex items-center gap-2">
-                                <Clock className="w-4 h-4 text-gray-400" />
+                               <Clock className="w-4 h-4 text-gray-400" />
                                 <span>
                                   {session.start_time.slice(0, 5)}
-                                  {session.end_time && ` - ${session.end_time.slice(0, 5)}`}
+                                  {session.end_time ? ` - ${session.end_time.slice(0, 5)}` : ' - Selesai'}
                                 </span>
                               </div>
                               
@@ -685,7 +685,7 @@ export default function AdminDashboard() {
                               <Clock className="w-3 h-3 text-gray-400 flex-shrink-0" />
                               <span className="truncate">
                                 {session.start_time.slice(0, 5)}
-                                {session.end_time && ` - ${session.end_time.slice(0, 5)}`}
+                                {session.end_time ? ` - ${session.end_time.slice(0, 5)}` : ' - Selesai'}
                               </span>
                             </div>
                             

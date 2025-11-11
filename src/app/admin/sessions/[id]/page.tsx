@@ -471,19 +471,17 @@ export default function SessionMonitorPage() {
                   </div>
                 </div>
 
-                {session.end_time && (
-                  <div className="flex items-center gap-3 py-2">
-                    <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Clock className="w-4 h-4 text-red-600" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs text-gray-500 font-medium mb-0.5">Waktu Selesai</p>
-                      <p className="text-sm sm:text-base text-gray-900 font-semibold">
-                        {formatTime(session.end_time)} 
-                      </p>
-                    </div>
+                <div className="flex items-center gap-3 py-2">
+                  <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Clock className="w-4 h-4 text-red-600" />
                   </div>
-                )}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-gray-500 font-medium mb-0.5">Waktu Selesai</p>
+                    <p className="text-sm sm:text-base text-gray-900 font-semibold">
+                      {session.end_time ? formatTime(session.end_time) : '- Selesai'}
+                    </p>
+                  </div>
+                </div>
               </div>
             </Card>
 
