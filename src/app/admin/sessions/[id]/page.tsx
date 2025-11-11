@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Session, Attendance } from '@/types'
+import { Session, Attendance, EmployeeAttendance } from '@/types'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -21,10 +21,13 @@ import {
   XCircle,
   CheckCircle,
   Activity,
-  AlertTriangle
+  AlertTriangle,
+  CreditCard,
+  Building2,
+  Phone,
+  UserCheck
 } from 'lucide-react'
 
-// Custom Confirmation Modal Component
 function ConfirmModal({ 
   isOpen, 
   onClose, 
@@ -56,15 +59,12 @@ function ConfirmModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-      {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
       
-      {/* Modal */}
       <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in zoom-in-95 duration-200">
-        {/* Icon */}
         <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 ${iconBg}`}>
           {type === 'success' ? (
             <CheckCircle className={`w-6 h-6 ${iconColor}`} />
@@ -75,17 +75,14 @@ function ConfirmModal({
           )}
         </div>
 
-        {/* Title */}
         <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
           {title}
         </h3>
 
-        {/* Message */}
         <p className="text-gray-600 text-center mb-6 leading-relaxed">
           {message}
         </p>
 
-        {/* Actions */}
         <div className="flex gap-3">
           <Button
             onClick={onClose}
@@ -113,10 +110,9 @@ export default function SessionMonitorPage() {
   const params = useParams()
   const router = useRouter()
   const [session, setSession] = useState<Session | null>(null)
-  const [attendances, setAttendances] = useState<Attendance[]>([])
+  const [attendances, setAttendances] = useState<(Attendance | EmployeeAttendance)[]>([])
   const [loading, setLoading] = useState(true)
   
-  // Modal State
   const [statusModal, setStatusModal] = useState<{
     isOpen: boolean
     action: 'close' | 'open' | null
@@ -129,21 +125,23 @@ export default function SessionMonitorPage() {
     let channel: any = null
 
     const init = async () => {
-      // Fetch data first (parallel queries)
       await fetchSessionData()
       
+      // Subscribe to realtime changes
+      const tableName = session?.session_type === 'employee' ? 'employee_attendances' : 'attendances'
+      
       channel = supabase
-        .channel('attendances-changes')
+        .channel(`${tableName}-changes`)
         .on(
           'postgres_changes',
           {
             event: 'INSERT',
             schema: 'public',
-            table: 'attendances',
+            table: tableName,
             filter: `session_id=eq.${params.id}`
           },
           (payload) => {
-            setAttendances(prev => [...prev, payload.new as Attendance])
+            setAttendances(prev => [...prev, payload.new as any])
           }
         )
         .subscribe()
@@ -156,28 +154,30 @@ export default function SessionMonitorPage() {
         supabase.removeChannel(channel)
       }
     }
-  }, [params.id])
+  }, [params.id, session?.session_type])
 
   const fetchSessionData = async () => {
     try {
-      const [sessionResult, attendanceResult] = await Promise.all([
-        supabase
-          .from('sessions')
-          .select('*')
-          .eq('id', params.id)
-          .single(),
-        supabase
-          .from('attendances')
-          .select('*')
-          .eq('session_id', params.id)
-          .order('checked_in_at', { ascending: true })
-      ])
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('sessions')
+        .select('*')
+        .eq('id', params.id)
+        .single()
 
-      if (sessionResult.error) throw sessionResult.error
-      if (attendanceResult.error) throw attendanceResult.error
+      if (sessionError) throw sessionError
+      setSession(sessionData)
 
-      setSession(sessionResult.data)
-      setAttendances(attendanceResult.data || [])
+      // Fetch attendances based on session type
+      const tableName = sessionData.session_type === 'employee' ? 'employee_attendances' : 'attendances'
+      
+      const { data: attendanceData, error: attendanceError } = await supabase
+        .from(tableName)
+        .select('*')
+        .eq('session_id', params.id)
+        .order('checked_in_at', { ascending: true })
+
+      if (attendanceError) throw attendanceError
+      setAttendances(attendanceData || [])
     } catch (error) {
       console.error('Error fetching data:', error)
       alert('❌ Gagal memuat data sesi')
@@ -255,9 +255,10 @@ export default function SessionMonitorPage() {
     return time.slice(0, 5)
   }
 
+  const isEmployeeSession = session.session_type === 'employee'
+
   return (
     <>
-      {/* Modal Konfirmasi */}
       <ConfirmModal
         isOpen={statusModal.isOpen}
         onClose={() => setStatusModal({ isOpen: false, action: null })}
@@ -273,10 +274,8 @@ export default function SessionMonitorPage() {
         type={statusModal.action === 'close' ? 'danger' : 'success'}
       />
 
-      {/* Header - Fixed Sticky with Transparent Background */}
       <header className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-b border-gray-200 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
-          {/* Mobile Header */}
           <div className="sm:hidden space-y-3">
             <Button
               variant="outline"
@@ -289,7 +288,18 @@ export default function SessionMonitorPage() {
             </Button>
             
             <div className="min-w-0">
-              <h1 className="text-lg font-semibold text-gray-900 truncate">Monitor Sesi</h1>
+              <div className="flex items-center gap-2 mb-1">
+                <h1 className="text-lg font-semibold text-gray-900 truncate">Monitor Sesi</h1>
+                <Badge
+                  className={`${
+                    isEmployeeSession
+                      ? 'bg-blue-100 text-blue-700 border-blue-200'
+                      : 'bg-blue-100 text-blue-700 border-blue-200'
+                  } border px-2 py-0.5 rounded-lg font-medium text-xs whitespace-nowrap`}
+                >
+                  {isEmployeeSession ? 'PEGAWAI' : 'EKSTERNAL'}
+                </Badge>
+              </div>
               <p className="text-xs text-gray-500 truncate">Real-time attendance tracking</p>
             </div>
 
@@ -328,7 +338,6 @@ export default function SessionMonitorPage() {
             </div>
           </div>
 
-          {/* Desktop Header */}
           <div className="hidden sm:flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Button
@@ -340,9 +349,17 @@ export default function SessionMonitorPage() {
                 Kembali
               </Button>
               <div className="h-8 w-px bg-gray-200" />
-              <div>
+              <div className="flex items-center gap-3">
                 <h1 className="text-xl font-semibold text-gray-900">Monitor Sesi</h1>
-                <p className="text-sm text-gray-500">Real-time attendance tracking</p>
+                <Badge
+                  className={`${
+                    isEmployeeSession
+                      ? 'bg-blue-100 text-blue-700 border-blue-200'
+                      : 'bg-blue-100 text-blue-700 border-blue-200'
+                  } border px-3 py-1 rounded-lg font-medium`}
+                >
+                  {isEmployeeSession ? 'PEGAWAI' : 'EKSTERNAL'}
+                </Badge>
               </div>
             </div>
 
@@ -381,13 +398,10 @@ export default function SessionMonitorPage() {
         </div>
       </header>
 
-      {/* Main Content with padding top for fixed header */}
       <div className="min-h-screen bg-gray-50 overflow-x-hidden pt-[140px] sm:pt-[88px]">
         <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 overflow-x-hidden">
         <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 w-full">
-          {/* Left Sidebar */}
           <div className="space-y-4 sm:space-y-6 w-full min-w-0">
-            {/* Session Info Card */}
             <Card className="p-4 sm:p-6 border border-gray-200 rounded-2xl hover:border-blue-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -433,7 +447,6 @@ export default function SessionMonitorPage() {
                   </div>
                 )}
 
-                {/* Tanggal */}
                 <div className="flex items-center gap-3 py-2">
                   <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
                     <Calendar className="w-4 h-4 text-purple-600" />
@@ -446,7 +459,6 @@ export default function SessionMonitorPage() {
                   </div>
                 </div>
 
-                {/* Waktu Mulai */}
                 <div className="flex items-center gap-3 py-2">
                   <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
                     <Clock className="w-4 h-4 text-blue-600" />
@@ -459,7 +471,6 @@ export default function SessionMonitorPage() {
                   </div>
                 </div>
 
-                {/* Waktu Selesai */}
                 {session.end_time && (
                   <div className="flex items-center gap-3 py-2">
                     <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -476,7 +487,6 @@ export default function SessionMonitorPage() {
               </div>
             </Card>
 
-            {/* Stats Card */}
             <Card className="p-4 sm:p-6 border border-gray-200 rounded-2xl bg-white hover:border-blue-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 sm:w-14 sm:h-14 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -495,7 +505,6 @@ export default function SessionMonitorPage() {
               )}
             </Card>
 
-            {/* QR Code */}
             {session.is_active && (
               <div className="w-full overflow-hidden">
                 <QRCodeDisplay 
@@ -510,7 +519,6 @@ export default function SessionMonitorPage() {
               </div>
             )}
 
-            {/* Export Card */}
             <Card className="p-4 sm:p-6 border border-gray-200 rounded-2xl hover:border-blue-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -538,7 +546,6 @@ export default function SessionMonitorPage() {
             </Card>
           </div>
 
-          {/* Main Content - Attendance List */}
           <div className="lg:col-span-2 w-full min-w-0">
             <Card className="p-4 sm:p-6 border border-gray-200 rounded-2xl w-full">
               <div className="flex items-center justify-between mb-4 sm:mb-6 gap-2">
@@ -573,76 +580,115 @@ export default function SessionMonitorPage() {
                 </div>
               ) : (
                 <div className="space-y-3 max-h-[600px] sm:max-h-[700px] overflow-y-auto pr-1 sm:pr-2 w-full">
-                  {attendances.map((att, index) => (
-                    <Card
-                      key={att.id}
-                      className="p-4 sm:p-5 border border-gray-200 hover:border-blue-300 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 rounded-xl group w-full"
-                    >
-                      <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4 w-full">
-                        <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-blue-600 transition-colors">
-                          <span className="font-bold text-blue-600 group-hover:text-white transition-colors">
-                            {index + 1}
-                          </span>
-                        </div>
-
-                        <div className="flex-1 min-w-0 w-full">
-                          <h4 className="font-bold text-gray-900 text-base sm:text-lg mb-3 group-hover:text-blue-600 transition-colors break-words">
-                            {att.full_name}
-                          </h4>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm w-full">
-                            <div className="min-w-0">
-                              <span className="text-gray-500">Instansi:</span>
-                              <p className="text-gray-900 font-medium break-words">{att.institution}</p>
-                            </div>
-                            <div className="min-w-0">
-                              <span className="text-gray-500">Jabatan:</span>
-                              <p className="text-gray-900 font-medium break-words">{att.position}</p>
-                            </div>
-                            <div className="min-w-0">
-                              <span className="text-gray-500">No. Telepon:</span>
-                              <p className="text-gray-900 font-medium break-words">{att.phone_number}</p>
-                            </div>
-                            <div className="min-w-0">
-                              <span className="text-gray-500">Waktu Absen:</span>
-                              <p className="text-gray-900 font-medium">
-                                {new Date(att.checked_in_at).toLocaleTimeString('id-ID', {
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}
-                              </p>
-                            </div>
+                  {attendances.map((att, index) => {
+                    const isEmployee = 'nip' in att
+                    
+                    return (
+                      <Card
+                        key={att.id}
+                        className="p-4 sm:p-5 border border-gray-200 hover:border-blue-300 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 rounded-xl group w-full"
+                      >
+                        <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4 w-full">
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
+                            isEmployee ? 'bg-blue-50 group-hover:bg-blue-600' : 'bg-blue-50 group-hover:bg-blue-600'
+                          }`}>
+                            <span className={`font-bold transition-colors ${
+                              isEmployee ? 'text-blue-600 group-hover:text-white' : 'text-blue-600 group-hover:text-white'
+                            }`}>
+                              {index + 1}
+                            </span>
                           </div>
 
-                          {/* Signature untuk mobile */}
-                          {att.signature && (
-                            <div className="mt-3 sm:hidden w-full">
-                              <p className="text-xs text-gray-500 mb-2">Tanda Tangan</p>
-                              <div className="w-full max-w-[200px]">
-                                <img
-                                  src={att.signature}
-                                  alt="Signature"
-                                  className="w-full h-16 object-contain border-2 border-gray-200 rounded-lg bg-gray-50"
-                                />
+                          <div className="flex-1 min-w-0 w-full">
+                            <h4 className="font-bold text-gray-900 text-base sm:text-lg mb-3 group-hover:text-blue-600 transition-colors break-words">
+                              {att.full_name}
+                            </h4>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm w-full">
+                              {isEmployee ? (
+                                <>
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <CreditCard className="w-3.5 h-3.5 text-blue-600" />
+                                      <span className="text-gray-500 font-medium">NIP:</span>
+                                    </div>
+                                    <p className="text-gray-900 font-medium break-words">{(att as EmployeeAttendance).nip}</p>
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <UserCheck className="w-3.5 h-3.5 text-blue-600" />
+                                      <span className="text-gray-500 font-medium">Jabatan:</span>
+                                    </div>
+                                    <p className="text-gray-900 font-medium break-words">{att.position}</p>
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <Building2 className="w-3.5 h-3.5 text-blue-600" />
+                                      <span className="text-gray-500 font-medium">Instansi:</span>
+                                    </div>
+                                    <p className="text-gray-900 font-medium break-words">{(att as Attendance).institution}</p>
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <UserCheck className="w-3.5 h-3.5 text-blue-600" />
+                                      <span className="text-gray-500 font-medium">Jabatan:</span>
+                                    </div>
+                                    <p className="text-gray-900 font-medium break-words">{att.position}</p>
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <Phone className="w-3.5 h-3.5 text-blue-600" />
+                                      <span className="text-gray-500 font-medium">No. Telepon:</span>
+                                    </div>
+                                    <p className="text-gray-900 font-medium break-words">{(att as Attendance).phone_number}</p>
+                                  </div>
+                                </>
+                              )}
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Clock className="w-3.5 h-3.5 text-blue-600" />
+                                  <span className="text-gray-500 font-medium">Waktu Absen:</span>
+                                </div>
+                                <p className="text-gray-900 font-medium">
+                                  {new Date(att.checked_in_at).toLocaleTimeString('id-ID', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </p>
                               </div>
+                            </div>
+
+                            {att.signature && (
+                              <div className="mt-3 sm:hidden w-full">
+                                <p className="text-xs text-gray-500 mb-2">Tanda Tangan</p>
+                                <div className="w-full max-w-[200px]">
+                                  <img
+                                    src={att.signature}
+                                    alt="Signature"
+                                    className="w-full h-16 object-contain border-2 border-gray-200 rounded-lg bg-gray-50"
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {att.signature && (
+                            <div className="hidden sm:block flex-shrink-0">
+                              <p className="text-xs text-gray-500 mb-2 text-center">Tanda Tangan</p>
+                              <img
+                                src={att.signature}
+                                alt="Signature"
+                                className="w-32 h-20 object-contain border-2 border-gray-200 rounded-lg bg-gray-50 hover:border-blue-300 transition-colors"
+                              />
                             </div>
                           )}
                         </div>
-
-                        {/* Signature untuk desktop */}
-                        {att.signature && (
-                          <div className="hidden sm:block flex-shrink-0">
-                            <p className="text-xs text-gray-500 mb-2 text-center">Tanda Tangan</p>
-                            <img
-                              src={att.signature}
-                              alt="Signature"
-                              className="w-32 h-20 object-contain border-2 border-gray-200 rounded-lg bg-gray-50 hover:border-blue-300 transition-colors"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </Card>
-                  ))}
+                      </Card>
+                    )
+                  })}
                 </div>
               )}
             </Card>

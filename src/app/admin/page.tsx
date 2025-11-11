@@ -22,10 +22,9 @@ import {
   Search,
   Filter,
   X,
-  AlertTriangle
+  AlertTriangle,
 } from 'lucide-react'
 
-// Custom Confirmation Modal Component
 function ConfirmModal({ 
   isOpen, 
   onClose, 
@@ -49,15 +48,12 @@ function ConfirmModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-      {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
       
-      {/* Modal */}
       <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in zoom-in-95 duration-200">
-        {/* Icon */}
         <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 ${
           type === 'danger' ? 'bg-red-100' : 'bg-yellow-100'
         }`}>
@@ -66,17 +62,14 @@ function ConfirmModal({
           }`} />
         </div>
 
-        {/* Title */}
         <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
           {title}
         </h3>
 
-        {/* Message */}
         <p className="text-gray-600 text-center mb-6 leading-relaxed">
           {message}
         </p>
 
-        {/* Actions */}
         <div className="flex gap-3">
           <Button
             onClick={onClose}
@@ -105,7 +98,6 @@ function ConfirmModal({
 }
 
 export default function AdminDashboard() {
-  // Force scrollbar to always show
   useEffect(() => {
     document.documentElement.style.overflowY = 'scroll'
     return () => {
@@ -119,11 +111,10 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState<string | null>(null)
   
-  // Search & Filter States
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'closed'>('all')
+  const [filterType, setFilterType] = useState<'all' | 'employee' | 'external'>('all')
 
-  // Modal States
   const [logoutModal, setLogoutModal] = useState(false)
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; sessionId: string; sessionTitle: string }>({
     isOpen: false,
@@ -137,7 +128,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     applyFilters()
-  }, [sessions, searchQuery, filterStatus])
+  }, [sessions, searchQuery, filterStatus, filterType])
 
   const fetchSessions = async () => {
     try {
@@ -145,7 +136,8 @@ export default function AdminDashboard() {
         .from('sessions')
         .select(`
           *,
-          attendances:attendances(count)
+          attendances:attendances(count),
+          employee_attendances:employee_attendances(count)
         `)
         .order('created_at', { ascending: false })
 
@@ -161,7 +153,6 @@ export default function AdminDashboard() {
   const applyFilters = () => {
     let filtered = [...sessions]
 
-    // Filter by search query
     if (searchQuery) {
       filtered = filtered.filter(session => 
         session.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -170,11 +161,16 @@ export default function AdminDashboard() {
       )
     }
 
-    // Filter by status
     if (filterStatus === 'active') {
       filtered = filtered.filter(session => session.is_active)
     } else if (filterStatus === 'closed') {
       filtered = filtered.filter(session => !session.is_active)
+    }
+
+    if (filterType === 'employee') {
+      filtered = filtered.filter(session => session.session_type === 'employee')
+    } else if (filterType === 'external') {
+      filtered = filtered.filter(session => session.session_type === 'external')
     }
 
     setFilteredSessions(filtered)
@@ -183,6 +179,7 @@ export default function AdminDashboard() {
   const clearFilters = () => {
     setSearchQuery('')
     setFilterStatus('all')
+    setFilterType('all')
   }
 
   const handleLogout = async () => {
@@ -191,11 +188,13 @@ export default function AdminDashboard() {
     router.refresh()
   }
 
-  const handleDeleteSession = async (sessionId: string) => {
+  const handleDeleteSession = async (sessionId: string, sessionType: string) => {
     setDeleting(sessionId)
     try {
+      const attendanceTable = sessionType === 'employee' ? 'employee_attendances' : 'attendances'
+      
       const { error: attendanceError } = await supabase
-        .from('attendances')
+        .from(attendanceTable)
         .delete()
         .eq('session_id', sessionId)
 
@@ -217,10 +216,14 @@ export default function AdminDashboard() {
     }
   }
 
-  const totalAttendances = sessions.reduce(
-    (acc, s: any) => acc + (s.attendances?.[0]?.count || 0),
-    0
-  )
+  const getAttendanceCount = (session: any) => {
+    if (session.session_type === 'employee') {
+      return session.employee_attendances?.[0]?.count || 0
+    }
+    return session.attendances?.[0]?.count || 0
+  }
+
+  const totalAttendances = sessions.reduce((acc, s: any) => acc + getAttendanceCount(s), 0)
   const activeSessions = sessions.filter((s) => s.is_active).length
 
   if (loading) {
@@ -236,7 +239,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Modals */}
       <ConfirmModal
         isOpen={logoutModal}
         onClose={() => setLogoutModal(false)}
@@ -251,7 +253,12 @@ export default function AdminDashboard() {
       <ConfirmModal
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ isOpen: false, sessionId: '', sessionTitle: '' })}
-        onConfirm={() => handleDeleteSession(deleteModal.sessionId)}
+        onConfirm={() => {
+          const session = sessions.find(s => s.id === deleteModal.sessionId)
+          if (session) {
+            handleDeleteSession(deleteModal.sessionId, session.session_type || 'external')
+          }
+        }}
         title="Hapus Sesi Rapat"
         message={`Yakin ingin menghapus sesi "${deleteModal.sessionTitle}"? Semua data absensi akan ikut terhapus dan tidak dapat dikembalikan.`}
         confirmText="Ya, Hapus"
@@ -259,8 +266,7 @@ export default function AdminDashboard() {
         type="danger"
       />
 
-      {/* Header - Responsive */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-40 backdrop-blur-sm bg-white/80">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-40 backdrop-blur-sm bg-white/80 safe-top">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -277,7 +283,7 @@ export default function AdminDashboard() {
               onClick={() => setLogoutModal(true)}
               variant="outline"
               size="sm"
-              className="border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 hover:scale-105 rounded-xl transition-all duration-300 flex-shrink-0"
+              className="border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 hover:scale-105 rounded-xl transition-all duration-300 flex-shrink-0 h-10"
             >
               <LogOut className="w-4 h-4 sm:mr-2" />
               <span className="hidden sm:inline">Logout</span>
@@ -286,10 +292,9 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        {/* Stats Cards - Responsive Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 pb-safe">
+        {/* Stats Cards - 3 Cards Only */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <Card className="p-5 sm:p-6 border border-gray-200 hover:border-blue-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 rounded-2xl group cursor-pointer">
             <div className="flex items-start justify-between mb-3 sm:mb-4">
               <div>
@@ -322,7 +327,7 @@ export default function AdminDashboard() {
             </div>
           </Card>
 
-          <Card className="p-5 sm:p-6 border border-gray-200 hover:border-purple-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 rounded-2xl group cursor-pointer sm:col-span-2 lg:col-span-1">
+          <Card className="p-5 sm:p-6 border border-gray-200 hover:border-purple-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 rounded-2xl group cursor-pointer">
             <div className="flex items-start justify-between mb-3 sm:mb-4">
               <div>
                 <p className="text-xs sm:text-sm font-medium text-gray-500 mb-1">Total Peserta</p>
@@ -339,7 +344,6 @@ export default function AdminDashboard() {
           </Card>
         </div>
 
-        {/* Header Section - Responsive */}
         <div className="mb-4 sm:mb-6 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
             <div>
@@ -350,17 +354,15 @@ export default function AdminDashboard() {
             </div>
             <Button
               onClick={() => router.push('/admin/sessions/create')}
-              className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30 hover:scale-105 transition-all duration-300 w-full sm:w-auto"
+              className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30 hover:scale-105 transition-all duration-300 w-full sm:w-auto h-11"
             >
               <Plus className="w-5 h-5 mr-2" />
               Buat Sesi Baru
             </Button>
           </div>
 
-          {/* Search & Filter Bar - Responsive */}
           <Card className="p-3 sm:p-4 border border-gray-200 rounded-xl">
             <div className="flex flex-col gap-3">
-              {/* Search */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                 <Input
@@ -371,8 +373,7 @@ export default function AdminDashboard() {
                 />
               </div>
 
-              {/* Filter Buttons - Responsive */}
-              <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+              <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
                 <Button
                   onClick={() => setFilterStatus('all')}
                   variant={filterStatus === 'all' ? 'default' : 'outline'}
@@ -381,7 +382,7 @@ export default function AdminDashboard() {
                     filterStatus === 'all'
                       ? 'border-2 border-blue-600 bg-blue-600 text-white hover:bg-blue-700 hover:border-blue-700 shadow-lg shadow-blue-500/20'
                       : 'border-2 border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300'
-                  } rounded-xl hover:scale-105 transition-all duration-300 flex-shrink-0 min-w-[90px]`}
+                  } rounded-xl hover:scale-105 transition-all duration-300 flex-shrink-0 min-w-[85px] h-9 whitespace-nowrap`}
                 >
                   <Filter className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5" />
                   Semua
@@ -394,7 +395,7 @@ export default function AdminDashboard() {
                     filterStatus === 'active'
                       ? 'border-2 border-green-600 bg-green-600 text-white hover:bg-green-700 hover:border-green-700 shadow-lg shadow-green-500/20'
                       : 'border-2 border-green-200 text-green-600 hover:bg-green-50 hover:border-green-300'
-                  } rounded-xl hover:scale-105 transition-all duration-300 flex-shrink-0 min-w-[90px]`}
+                  } rounded-xl hover:scale-105 transition-all duration-300 flex-shrink-0 min-w-[85px] h-9 whitespace-nowrap`}
                 >
                   Aktif
                 </Button>
@@ -406,16 +407,44 @@ export default function AdminDashboard() {
                     filterStatus === 'closed'
                       ? 'border-2 border-red-600 bg-red-600 text-white hover:bg-red-700 hover:border-red-700 shadow-lg shadow-red-500/20'
                       : 'border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300'
-                  } rounded-xl hover:scale-105 transition-all duration-300 flex-shrink-0 min-w-[90px]`}
+                  } rounded-xl hover:scale-105 transition-all duration-300 flex-shrink-0 min-w-[85px] h-9 whitespace-nowrap`}
                 >
                   Ditutup
+                </Button>
+                
+                <div className="w-px h-8 bg-gray-200 mx-1 flex-shrink-0" />
+                
+                <Button
+                  onClick={() => setFilterType('employee')}
+                  variant={filterType === 'employee' ? 'default' : 'outline'}
+                  size="sm"
+                  className={`${
+                    filterType === 'employee'
+                      ? 'border-2 border-blue-600 bg-blue-600 text-white hover:bg-blue-700 hover:border-blue-700 shadow-lg shadow-blue-500/20'
+                      : 'border-2 border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300'
+                  } rounded-xl hover:scale-105 transition-all duration-300 flex-shrink-0 min-w-[100px] h-9 whitespace-nowrap`}
+                >
+                  <Calendar className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5" />
+                  Pegawai
+                </Button>
+                <Button
+                  onClick={() => setFilterType('external')}
+                  variant={filterType === 'external' ? 'default' : 'outline'}
+                  size="sm"
+                  className={`${
+                    filterType === 'external'
+                      ? 'border-2 border-amber-600 bg-amber-600 text-white hover:bg-amber-700 hover:border-amber-700 shadow-lg shadow-amber-500/20'
+                      : 'border-2 border-amber-200 text-amber-600 hover:bg-amber-50 hover:border-amber-300'
+                  } rounded-xl hover:scale-105 transition-all duration-300 flex-shrink-0 min-w-[110px] h-9 whitespace-nowrap`}
+                >
+                  <Calendar className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5" />
+                  Eksternal
                 </Button>
               </div>
             </div>
           </Card>
         </div>
 
-        {/* Sessions List - Responsive */}
         <div className="min-h-[400px]">
           {filteredSessions.length === 0 ? (
             <Card className="p-8 sm:p-16 text-center border-2 border-dashed border-gray-200 rounded-2xl">
@@ -437,7 +466,7 @@ export default function AdminDashboard() {
               {sessions.length === 0 ? (
                 <Button
                   onClick={() => router.push('/admin/sessions/create')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg hover:scale-105 transition-all duration-300 w-full sm:w-auto"
+                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg hover:scale-105 transition-all duration-300 w-full sm:w-auto h-11"
                 >
                   <Plus className="w-5 h-5 mr-2" />
                   Buat Sesi Pertama
@@ -446,7 +475,7 @@ export default function AdminDashboard() {
                 <Button
                   onClick={clearFilters}
                   variant="outline"
-                  className="border-2 border-gray-200 hover:bg-gray-50 hover:scale-105 rounded-xl transition-all duration-300 w-full sm:w-auto"
+                  className="border-2 border-gray-200 hover:bg-gray-50 hover:scale-105 rounded-xl transition-all duration-300 w-full sm:w-auto h-11"
                 >
                   <X className="w-4 h-4 mr-2" />
                   Clear Filters
@@ -455,202 +484,254 @@ export default function AdminDashboard() {
             </Card>
           ) : (
             <div className="space-y-4">
-              {filteredSessions.map((session: any) => (
-                <Card
-                  key={session.id}
-                  className="p-4 sm:p-6 border border-gray-200 hover:border-blue-300 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 rounded-2xl group"
-                >
-                  {/* Desktop Layout */}
-                  <div className="hidden sm:flex items-start justify-between gap-6">
-                    {/* Left Content */}
-                    <div className="flex-1">
-                      <div className="flex items-start gap-4 mb-4">
-                        <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-blue-100 transition-colors">
-                          <Calendar className="w-6 h-6 text-blue-600" />
+              {filteredSessions.map((session: any) => {
+                const isEmployee = session.session_type === 'employee'
+                const hoverColor = isEmployee ? 'blue' : 'amber'
+                
+                return (
+                  <Card
+                    key={session.id}
+                    className={`p-4 sm:p-6 border border-gray-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 rounded-2xl group ${
+                      isEmployee ? 'hover:border-blue-300' : 'hover:border-amber-300'
+                    }`}
+                  >
+                    {/* Desktop Layout */}
+                    <div className="hidden sm:flex items-start justify-between gap-6">
+                      <div className="flex-1">
+                        <div className="flex items-start gap-4 mb-4">
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
+                            isEmployee 
+                              ? 'bg-blue-50 group-hover:bg-blue-100' 
+                              : 'bg-amber-50 group-hover:bg-amber-100'
+                          }`}>
+                            {isEmployee ? (
+                              <Calendar className="w-6 h-6 text-blue-600" />
+                            ) : (
+                              <Calendar className="w-6 h-6 text-amber-600" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h3 className={`text-xl font-bold text-gray-900 transition-colors ${
+                                isEmployee ? 'group-hover:text-blue-600' : 'group-hover:text-amber-600'
+                              }`}>
+                                {session.title}
+                              </h3>
+                              <Badge
+                                className={`${
+                                  isEmployee
+                                    ? 'bg-blue-100 text-blue-700 border-blue-200'
+                                    : 'bg-amber-100 text-amber-700 border-amber-200'
+                                } border px-3 py-1 rounded-lg font-medium`}
+                              >
+                                {isEmployee ? 'PEGAWAI' : 'EKSTERNAL'}
+                              </Badge>
+                              <Badge
+                                className={`${
+                                  session.is_active
+                                    ? 'bg-green-100 text-green-700 border-green-200'
+                                    : 'bg-red-100 text-red-700 border-red-200'
+                                } border px-3 py-1 rounded-lg font-medium`}
+                              >
+                                {session.is_active ? 'Aktif' : 'Ditutup'}
+                              </Badge>
+                            </div>
+
+                            {session.description && (
+                              <p className="text-gray-600 mb-4 leading-relaxed">
+                                {session.description}
+                              </p>
+                            )}
+
+                            <div className="flex flex-wrap gap-6 text-sm text-gray-600">
+                              {session.location && (
+                                <div className="flex items-center gap-2">
+                                  <MapPin className="w-4 h-4 text-gray-400" />
+                                  <span>{session.location}</span>
+                                </div>
+                              )}
+                              
+                              <div className="flex items-center gap-2">
+                                <Calendar className="w-4 h-4 text-gray-400" />
+                                <span>
+                                  {new Date(session.session_date).toLocaleDateString('id-ID', {
+                                    day: 'numeric',
+                                    month: 'long',
+                                    year: 'numeric',
+                                  })}
+                                </span>
+                              </div>
+                              
+                              <div className="flex items-center gap-2">
+                                <Clock className="w-4 h-4 text-gray-400" />
+                                <span>
+                                  {session.start_time.slice(0, 5)}
+                                  {session.end_time && ` - ${session.end_time.slice(0, 5)}`}
+                                </span>
+                              </div>
+                              
+                              <div className="flex items-center gap-2">
+                                <Users className="w-4 h-4 text-gray-400" />
+                                <span className="font-medium text-gray-900">
+                                  {getAttendanceCount(session)} peserta
+                                </span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Button
+                          onClick={() => router.push(`/admin/sessions/${session.id}`)}
+                          className={`${
+                            isEmployee
+                              ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20 hover:shadow-blue-500/30'
+                              : 'bg-amber-600 hover:bg-amber-700 shadow-amber-500/20 hover:shadow-amber-500/30'
+                          } text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300`}
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          Monitor
+                        </Button>
+                        <Button
+                          onClick={() => setDeleteModal({ 
+                            isOpen: true, 
+                            sessionId: session.id, 
+                            sessionTitle: session.title 
+                          })}
+                          disabled={deleting === session.id}
+                          variant="outline"
+                          className="border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 rounded-xl hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                        >
+                          {deleting === session.id ? (
+                            <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Mobile Layout */}
+                    <div className="sm:hidden flex flex-col gap-4">
+                      <div className="flex items-start gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
+                          isEmployee 
+                            ? 'bg-blue-50 group-hover:bg-blue-100' 
+                            : 'bg-amber-50 group-hover:bg-amber-100'
+                        }`}>
+                          {isEmployee ? (
+                            <Calendar className="w-5 h-5 text-blue-600" />
+                          ) : (
+                            <Calendar className="w-5 h-5 text-amber-600" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start gap-2 mb-2">
+                            <h3 className={`text-base font-bold text-gray-900 transition-colors break-words flex-1 ${
+                              isEmployee ? 'group-hover:text-blue-600' : 'group-hover:text-amber-600'
+                            }`}>
                               {session.title}
                             </h3>
+                          </div>
+                          
+                          <div className="flex flex-wrap gap-1.5 mb-3">
+                            <Badge
+                              className={`${
+                                isEmployee
+                                  ? 'bg-blue-100 text-blue-700 border-blue-200'
+                                  : 'bg-amber-100 text-amber-700 border-amber-200'
+                              } border px-2 py-0.5 rounded-lg font-medium text-xs whitespace-nowrap`}
+                            >
+                              {isEmployee ? 'PEGAWAI' : 'EKSTERNAL'}
+                            </Badge>
                             <Badge
                               className={`${
                                 session.is_active
                                   ? 'bg-green-100 text-green-700 border-green-200'
                                   : 'bg-red-100 text-red-700 border-red-200'
-                              } border px-3 py-1 rounded-lg font-medium`}
+                              } border px-2 py-0.5 rounded-lg font-medium text-xs whitespace-nowrap`}
                             >
                               {session.is_active ? 'Aktif' : 'Ditutup'}
                             </Badge>
                           </div>
 
                           {session.description && (
-                            <p className="text-gray-600 mb-4 leading-relaxed">
+                            <p className="text-sm text-gray-600 mb-3 leading-relaxed break-words line-clamp-2">
                               {session.description}
                             </p>
                           )}
 
-                          {/* Meta Info */}
-                          <div className="flex flex-wrap gap-6 text-sm text-gray-600">
+                          <div className="grid grid-cols-1 gap-2 text-xs text-gray-600">
                             {session.location && (
                               <div className="flex items-center gap-2">
-                                <MapPin className="w-4 h-4 text-gray-400" />
-                                <span>{session.location}</span>
+                                <MapPin className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                                <span className="truncate">{session.location}</span>
                               </div>
                             )}
                             
                             <div className="flex items-center gap-2">
-                              <Calendar className="w-4 h-4 text-gray-400" />
-                              <span>
+                              <Calendar className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                              <span className="truncate">
                                 {new Date(session.session_date).toLocaleDateString('id-ID', {
                                   day: 'numeric',
-                                  month: 'long',
+                                  month: 'short',
                                   year: 'numeric',
                                 })}
                               </span>
                             </div>
                             
                             <div className="flex items-center gap-2">
-                              <Clock className="w-4 h-4 text-gray-400" />
-                              <span>
+                              <Clock className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                              <span className="truncate">
                                 {session.start_time.slice(0, 5)}
                                 {session.end_time && ` - ${session.end_time.slice(0, 5)}`}
                               </span>
                             </div>
                             
                             <div className="flex items-center gap-2">
-                              <Users className="w-4 h-4 text-gray-400" />
+                              <Users className="w-3 h-3 text-gray-400 flex-shrink-0" />
                               <span className="font-medium text-gray-900">
-                                {session.attendances?.[0]?.count || 0} peserta
+                                {getAttendanceCount(session)} peserta
                               </span>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Right Actions */}
-                    <div className="flex items-center gap-2">
-                      <Button
-                        onClick={() => router.push(`/admin/sessions/${session.id}`)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30 hover:scale-105 transition-all duration-300"
-                      >
-                        <Eye className="w-4 h-4 mr-2" />
-                        Monitor
-                      </Button>
-                      <Button
-                        onClick={() => setDeleteModal({ 
-                          isOpen: true, 
-                          sessionId: session.id, 
-                          sessionTitle: session.title 
-                        })}
-                        disabled={deleting === session.id}
-                        variant="outline"
-                        className="border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 rounded-xl hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                      >
-                        {deleting === session.id ? (
-                          <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <Trash2 className="w-4 h-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Mobile Layout */}
-                  <div className="sm:hidden flex flex-col gap-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-blue-100 transition-colors">
-                        <Calendar className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start gap-2 mb-2">
-                          <h3 className="text-base font-bold text-gray-900 group-hover:text-blue-600 transition-colors break-words">
-                            {session.title}
-                          </h3>
-                          <Badge
-                            className={`${
-                              session.is_active
-                                ? 'bg-green-100 text-green-700 border-green-200'
-                                : 'bg-red-100 text-red-700 border-red-200'
-                            } border px-2 py-0.5 rounded-lg font-medium text-xs whitespace-nowrap flex-shrink-0`}
-                          >
-                            {session.is_active ? 'Aktif' : 'Ditutup'}
-                          </Badge>
-                        </div>
-
-                        {session.description && (
-                          <p className="text-sm text-gray-600 mb-3 leading-relaxed break-words">
-                            {session.description}
-                          </p>
-                        )}
-
-                        <div className="grid grid-cols-1 gap-2 text-xs text-gray-600">
-                          {session.location && (
-                            <div className="flex items-center gap-2">
-                              <MapPin className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                              <span className="truncate">{session.location}</span>
-                            </div>
+                      <div className="flex gap-2 pt-2 border-t border-gray-100">
+                        <Button
+                          onClick={() => router.push(`/admin/sessions/${session.id}`)}
+                          className={`${
+                            isEmployee
+                              ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20 hover:shadow-blue-500/30'
+                              : 'bg-amber-600 hover:bg-amber-700 shadow-amber-500/20 hover:shadow-amber-500/30'
+                          } text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex-1 text-sm h-10`}
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          Monitor
+                        </Button>
+                        <Button
+                          onClick={() => setDeleteModal({ 
+                            isOpen: true, 
+                            sessionId: session.id, 
+                            sessionTitle: session.title 
+                          })}
+                          disabled={deleting === session.id}
+                          variant="outline"
+                          className="border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 px-3 h-10"
+                        >
+                          {deleting === session.id ? (
+                            <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
                           )}
-                          
-                          <div className="flex items-center gap-2">
-                            <Calendar className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                            <span className="truncate">
-                              {new Date(session.session_date).toLocaleDateString('id-ID', {
-                                day: 'numeric',
-                                month: 'short',
-                                year: 'numeric',
-                              })}
-                            </span>
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <Clock className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                            <span className="truncate">
-                              {session.start_time.slice(0, 5)}
-                              {session.end_time && ` - ${session.end_time.slice(0, 5)}`}
-                            </span>
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <Users className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                            <span className="font-medium text-gray-900">
-                              {session.attendances?.[0]?.count || 0} peserta
-                            </span>
-                          </div>
-                        </div>
+                        </Button>
                       </div>
                     </div>
-
-                    {/* Action Buttons - Mobile */}
-                    <div className="flex gap-2 pt-2 border-t border-gray-100">
-                      <Button
-                        onClick={() => router.push(`/admin/sessions/${session.id}`)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30 transition-all duration-300 flex-1 text-sm"
-                      >
-                        <Eye className="w-4 h-4 mr-2" />
-                        Monitor
-                      </Button>
-                      <Button
-                        onClick={() => setDeleteModal({ 
-                          isOpen: true, 
-                          sessionId: session.id, 
-                          sessionTitle: session.title 
-                        })}
-                        disabled={deleting === session.id}
-                        variant="outline"
-                        className="border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 px-3"
-                      >
-                        {deleting === session.id ? (
-                          <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <Trash2 className="w-4 h-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                )
+              })}
             </div>
           )}
         </div>

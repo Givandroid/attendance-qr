@@ -9,9 +9,30 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card } from '@/components/ui/card'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { ChevronDown, MapPin, Sparkles, Info, CalendarCheck, Type, FileEdit, AlertCircle } from 'lucide-react'
-import { format } from 'date-fns'
-import { id as localeId } from 'date-fns/locale'
+import { ChevronDown, MapPin, Sparkles, Info, CalendarCheck, Type, FileEdit, AlertCircle, Users } from 'lucide-react'
+
+// Utility functions to replace date-fns
+const formatDate = (date: Date | undefined) => {
+  if (!date) return '-'
+  return date.toLocaleDateString('id-ID', { 
+    day: 'numeric', 
+    month: 'short', 
+    year: 'numeric' 
+  })
+}
+
+const formatDateForDB = (date: Date | undefined) => {
+  if (!date) return ''
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const formatTime = (time: string) => {
+  if (!time) return '-'
+  return time
+}
 
 function ConfirmModal({ 
   isOpen, 
@@ -42,42 +63,26 @@ function ConfirmModal({
 }) {
   if (!isOpen) return null
 
-  const formatDate = (date?: Date) => {
-    if (!date) return '-'
-    return format(date, 'dd MMM yyyy', { locale: localeId })
-  }
-
-  const formatTime = (time: string) => {
-    if (!time) return '-'
-    return time
-  }
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-      {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
       
-      {/* Modal */}
       <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
-        {/* Icon */}
         <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 bg-blue-100">
           <AlertCircle className="w-6 h-6 text-blue-600" />
         </div>
 
-        {/* Title */}
         <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
           {title}
         </h3>
 
-        {/* Message */}
         <p className="text-gray-600 text-center mb-4 leading-relaxed">
           {message}
         </p>
 
-        {/* Session Data Preview */}
         {sessionData && (
           <div className="bg-gray-50 rounded-xl p-4 mb-6 space-y-3 text-sm">
             <div className="border-b border-gray-200 pb-3">
@@ -113,7 +118,6 @@ function ConfirmModal({
           </div>
         )}
 
-        {/* Actions */}
         <div className="flex gap-3">
           <Button
             onClick={onClose}
@@ -137,7 +141,7 @@ function ConfirmModal({
   )
 }
 
-export default function SessionForm({ onSuccess }: { onSuccess?: (id: string) => void }) {
+export default function EmployeeSessionForm({ onSuccess }: { onSuccess?: (id: string) => void }) {
   const [loading, setLoading] = useState(false)
   const [startDateOpen, setStartDateOpen] = useState(false)
   const [endDateOpen, setEndDateOpen] = useState(false)
@@ -152,16 +156,12 @@ export default function SessionForm({ onSuccess }: { onSuccess?: (id: string) =>
     end_time: ''
   })
 
-  const handleSubmitClick = (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    // Validasi form
+  const handleSubmitClick = () => {
     if (!form.title || !form.location || !startDate || !form.start_time) {
       alert('❌ Mohon lengkapi semua field yang wajib diisi')
       return
     }
 
-    // Tampilkan modal konfirmasi
     setShowConfirmModal(true)
   }
 
@@ -170,19 +170,19 @@ export default function SessionForm({ onSuccess }: { onSuccess?: (id: string) =>
 
     try {
       const tempId = crypto.randomUUID()
-      const qrUrl = `${window.location.origin}/attendance/${tempId}`
+      const qrUrl = `${window.location.origin}/employee-attendance/${tempId}`
 
       const sessionPayload = {
         id: tempId,
         title: form.title,
         description: form.description,
         location: form.location,
-        session_date: startDate ? format(startDate, 'yyyy-MM-dd') : '',
+        session_date: formatDateForDB(startDate),
         start_time: form.start_time,
         end_time: form.end_time || null,
         qr_code: qrUrl,
         is_active: true,
-        session_type: 'external' 
+        session_type: 'employee'
       }
 
       const { data, error } = await supabase
@@ -193,7 +193,7 @@ export default function SessionForm({ onSuccess }: { onSuccess?: (id: string) =>
 
       if (error) throw error
       
-      alert('✅ Sesi berhasil dibuat!')
+      alert('✅ Sesi Rapat Pegawai berhasil dibuat!')
       onSuccess?.(data.id)
       
       setForm({ 
@@ -215,13 +215,12 @@ export default function SessionForm({ onSuccess }: { onSuccess?: (id: string) =>
 
   return (
     <>
-      {/* Modal Konfirmasi */}
       <ConfirmModal
         isOpen={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}
         onConfirm={handleConfirmSubmit}
-        title="Konfirmasi Pembuatan Sesi"
-        message="Pastikan semua informasi sesi sudah benar. Setelah dibuat, QR code akan langsung tersedia."
+        title="Konfirmasi Pembuatan Sesi Pegawai"
+        message="Pastikan semua informasi sesi sudah benar. Setelah dibuat, QR code untuk pegawai akan langsung tersedia."
         confirmText="Ya, Buat Sesi"
         cancelText="Periksa Kembali"
         sessionData={{
@@ -236,15 +235,20 @@ export default function SessionForm({ onSuccess }: { onSuccess?: (id: string) =>
       />
 
       <Card className="p-4 sm:p-8 border border-slate-200 rounded-2xl bg-white shadow-sm">
-        <form onSubmit={handleSubmitClick} className="space-y-4 sm:space-y-6">
-          {/* Header */}
+        <div className="space-y-4 sm:space-y-6">
+          {/* Header with Badge */}
           <div className="flex items-start gap-3 sm:gap-4 pb-4 sm:pb-6 border-b border-slate-200">
             <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/30">
               <CalendarCheck className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
-            <div>
-              <h2 className="text-xl sm:text-2xl font-semibold text-slate-900">Informasi Sesi</h2>
-              <p className="text-xs sm:text-sm text-slate-500 mt-0.5 sm:mt-1">Lengkapi detail sesi rapat Anda</p>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <h2 className="text-xl sm:text-2xl font-semibold text-slate-900">Sesi Rapat Pegawai</h2>
+                <span className="px-2.5 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-lg">
+                  INTERNAL
+                </span>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-500">Untuk rapat internal dengan pegawai</p>
             </div>
           </div>
 
@@ -305,7 +309,7 @@ export default function SessionForm({ onSuccess }: { onSuccess?: (id: string) =>
             </div>
           </div>
 
-          {/* Waktu Mulai - BLUE */}
+          {/* Waktu Mulai */}
           <div className="space-y-3 sm:space-y-4 p-4 sm:p-5 rounded-xl bg-blue-50 border-2 border-blue-200">
             <Label className="text-sm sm:text-base text-blue-900 font-medium flex items-center gap-2">
               <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
@@ -314,7 +318,6 @@ export default function SessionForm({ onSuccess }: { onSuccess?: (id: string) =>
             </Label>
             
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-              {/* Date Picker */}
               <div className="flex flex-col gap-2 sm:gap-3 flex-1">
                 <Label htmlFor="start-date" className="text-xs sm:text-sm text-blue-700 font-medium px-1">
                   Tanggal
@@ -328,7 +331,7 @@ export default function SessionForm({ onSuccess }: { onSuccess?: (id: string) =>
                       className="justify-between font-normal bg-white border-2 border-blue-300 hover:border-blue-400 hover:bg-blue-50/70 h-10 sm:h-11 rounded-lg transition-all"
                     >
                       <span className={`text-sm sm:text-base ${startDate ? "text-blue-900" : "text-slate-500"}`}>
-                        {startDate ? format(startDate, 'dd MMM yyyy', { locale: localeId }) : "Pilih tanggal"}
+                        {startDate ? formatDate(startDate) : "Pilih tanggal"}
                       </span>
                       <ChevronDown className="w-4 h-4 text-blue-600" />
                     </Button>
@@ -337,21 +340,16 @@ export default function SessionForm({ onSuccess }: { onSuccess?: (id: string) =>
                     <Calendar
                       mode="single"
                       selected={startDate}
-                      captionLayout="dropdown"
                       onSelect={(date) => {
                         setStartDate(date)
                         setStartDateOpen(false)
                       }}
-                      locale={localeId}
                       disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                      fromYear={2024}
-                      toYear={2030}
                     />
                   </PopoverContent>
                 </Popover>
               </div>
 
-              {/* Time Picker - Blue Section */}
               <div className="flex flex-col gap-2 sm:gap-3 flex-1">
                 <Label htmlFor="start-time" className="text-xs sm:text-sm text-blue-700 font-medium px-1">
                   Waktu
@@ -362,14 +360,14 @@ export default function SessionForm({ onSuccess }: { onSuccess?: (id: string) =>
                   required
                   value={form.start_time}
                   onChange={(e) => setForm({ ...form, start_time: e.target.value })}
-                  className="w-full h-10 sm:h-11 text-xs sm:text-base bg-white border-2 border-blue-300 hover:border-blue-400 hover:bg-blue-50/70 focus:border-blue-500 focus:ring-blue-500/20 rounded-lg transition-all px-3 [color-scheme:light]"
-                  style={{ color: '#1e3a8a' }}
+                  className="w-full h-10 sm:h-11 text-xs sm:text-base bg-white border-2 border-blue-300 hover:border-blue-400 hover:bg-blue-50/70 focus:border-blue-500 focus:ring-blue-500/20 rounded-lg transition-all px-3"
+                  style={{ colorScheme: 'light', color: '#1e3a8a' }}
                 />
               </div>
             </div>
           </div>
 
-          {/* Waktu Selesai - RED */}
+          {/* Waktu Selesai */}
           <div className="space-y-3 sm:space-y-4 p-4 sm:p-5 rounded-xl bg-red-50 border-2 border-red-200">
             <Label className="text-sm sm:text-base text-red-900 font-medium flex items-center gap-2">
               <div className="w-2 h-2 bg-red-600 rounded-full"></div>
@@ -378,7 +376,6 @@ export default function SessionForm({ onSuccess }: { onSuccess?: (id: string) =>
             </Label>
             
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-              {/* Date Picker */}
               <div className="flex flex-col gap-2 sm:gap-3 flex-1">
                 <Label htmlFor="end-date" className="text-xs sm:text-sm text-red-700 font-medium px-1">
                   Tanggal
@@ -392,7 +389,7 @@ export default function SessionForm({ onSuccess }: { onSuccess?: (id: string) =>
                       className="justify-between font-normal bg-white border-2 border-red-300 hover:border-red-400 hover:bg-red-50/70 h-10 sm:h-11 rounded-lg transition-all"
                     >
                       <span className={`text-sm sm:text-base ${endDate ? "text-red-900" : "text-slate-500"}`}>
-                        {endDate ? format(endDate, 'dd MMM yyyy', { locale: localeId }) : "Pilih tanggal"}
+                        {endDate ? formatDate(endDate) : "Pilih tanggal"}
                       </span>
                       <ChevronDown className="w-4 h-4 text-red-600" />
                     </Button>
@@ -401,26 +398,21 @@ export default function SessionForm({ onSuccess }: { onSuccess?: (id: string) =>
                     <Calendar
                       mode="single"
                       selected={endDate}
-                      captionLayout="dropdown"
                       onSelect={(date) => {
                         setEndDate(date)
                         setEndDateOpen(false)
                       }}
-                      locale={localeId}
                       disabled={(date) => {
                         const today = new Date(new Date().setHours(0, 0, 0, 0))
                         if (date < today) return true
                         if (startDate && date < startDate) return true
                         return false
                       }}
-                      fromYear={2024}
-                      toYear={2030}
                     />
                   </PopoverContent>
                 </Popover>
               </div>
 
-              {/* Time Picker - Red Section */}
               <div className="flex flex-col gap-2 sm:gap-3 flex-1">
                 <Label htmlFor="end-time" className="text-xs sm:text-sm text-red-700 font-medium px-1">
                   Waktu
@@ -430,8 +422,8 @@ export default function SessionForm({ onSuccess }: { onSuccess?: (id: string) =>
                   id="end-time"
                   value={form.end_time}
                   onChange={(e) => setForm({ ...form, end_time: e.target.value })}
-                  className="red-section-input w-full h-10 sm:h-11 text-sm sm:text-base bg-white border-2 border-red-300 hover:border-red-400 hover:bg-red-50/70 focus:border-red-500 focus:ring-red-500/20 rounded-lg transition-all px-3 [color-scheme:light]"
-                  style={{ color: '#7f1d1d' }}
+                  className="w-full h-10 sm:h-11 text-sm sm:text-base bg-white border-2 border-red-300 hover:border-red-400 hover:bg-red-50/70 focus:border-red-500 focus:ring-red-500/20 rounded-lg transition-all px-3"
+                  style={{ colorScheme: 'light', color: '#7f1d1d' }}
                 />
               </div>
             </div>
@@ -454,7 +446,7 @@ export default function SessionForm({ onSuccess }: { onSuccess?: (id: string) =>
 
           {/* Submit Button */}
           <Button
-            type="submit"
+            onClick={handleSubmitClick}
             disabled={loading}
             className="w-full h-11 sm:h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-medium shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-200 disabled:opacity-50 text-sm sm:text-base"
           >
@@ -465,11 +457,11 @@ export default function SessionForm({ onSuccess }: { onSuccess?: (id: string) =>
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <span>Buat Sesi & Generate QR Code</span>
+                <span>Buat Sesi Pegawai & Generate QR</span>
               </div>
             )}
           </Button>
-        </form>
+        </div>
       </Card>
     </>
   )

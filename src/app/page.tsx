@@ -114,7 +114,7 @@ export default function LandingPage() {
               Export Laporan
             </h3>
             <p className="text-gray-600 leading-relaxed">
-              Download data absensi dalam format PDF atau CSV dengan mudah
+              Download data absensi dalam format PDF 
             </p>
           </Card>
         </div>

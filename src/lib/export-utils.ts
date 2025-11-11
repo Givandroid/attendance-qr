@@ -1,9 +1,11 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { Session, Attendance } from '@/types'
+import { Session, Attendance, EmployeeAttendance } from '@/types'
 
-export const exportToPDF = async (session: Session, attendances: Attendance[]) => {
+export const exportToPDF = async (session: Session, attendances: (Attendance | EmployeeAttendance)[]) => {
   const doc = new jsPDF()
+  
+  const isEmployeeSession = session.session_type === 'employee'
   
   // Fungsi untuk menambahkan kop surat (hanya halaman pertama)
   const addLetterhead = async () => {
@@ -60,7 +62,7 @@ export const exportToPDF = async (session: Session, attendances: Attendance[]) =
   doc.setFont('helvetica', 'bold')
   doc.text('DAFTAR HADIR', 105, 47, { align: 'center' })
   
-  const boxStartY = 51
+  const boxStartY = 58
   const labelX = 18
   const valueX = 50
   let contentHeight = 5 
@@ -83,11 +85,11 @@ export const exportToPDF = async (session: Session, attendances: Attendance[]) =
   doc.roundedRect(14, boxStartY, 182, contentHeight, 2, 2, 'FD')
   
   doc.setFontSize(9)
+  doc.setTextColor(0, 0, 0)
   let yPos = boxStartY + 6
   
   // Judul Rapat
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(0, 0, 0)
   doc.text('Judul Rapat', labelX, yPos)
   doc.setFont('helvetica', 'normal')
   doc.text(`: ${session.title}`, valueX, yPos)
@@ -142,22 +144,66 @@ export const exportToPDF = async (session: Session, attendances: Attendance[]) =
   
   const tableStartY = boxStartY + contentHeight + 8
   
-  // Tabel Kehadiran 
-  const tableData = attendances.map((att, index) => [
-    index + 1,
-    att.full_name || '-',
-    att.institution || '-',
-    att.position || '-',
-    '' // Placeholder untuk tanda tangan
-  ])
+  // Tabel Kehadiran - BERBEDA untuk Employee vs External
+  let tableHeaders: string[]
+  let tableData: any[]
+  let columnStyles: any
   
-  autoTable(doc, {
+  if (isEmployeeSession) {
+    // TABEL PEGAWAI
+    tableHeaders = ['No', 'NIP', 'Nama Lengkap', 'Jabatan', 'Tanda Tangan']
+    
+    tableData = attendances.map((att, index) => {
+      const empAtt = att as EmployeeAttendance
+      return [
+        index + 1,
+        empAtt.nip || '-',
+        empAtt.full_name || '-',
+        empAtt.position || '-',
+        '' // Placeholder untuk tanda tangan
+      ]
+    })
+    
+    columnStyles = {
+      0: { cellWidth: 12, halign: 'center' },
+      1: { cellWidth: 35 },
+      2: { cellWidth: 50 },
+      3: { cellWidth: 38 },
+      4: { cellWidth: 30, halign: 'center', minCellHeight: 15 }
+    }
+  } else {
+    // TABEL INSTANSI LUAR
+    tableHeaders = ['No', 'Nama Lengkap', 'Instansi', 'Jabatan', 'No. Telepon', 'Tanda Tangan']
+    
+    tableData = attendances.map((att, index) => {
+      const extAtt = att as Attendance
+      return [
+        index + 1,
+        extAtt.full_name || '-',
+        extAtt.institution || '-',
+        extAtt.position || '-',
+        extAtt.phone_number || '-',
+        '' // Placeholder untuk tanda tangan
+      ]
+    })
+    
+    columnStyles = {
+      0: { cellWidth: 10, halign: 'center' },
+      1: { cellWidth: 38 },
+      2: { cellWidth: 35 },
+      3: { cellWidth: 32 },
+      4: { cellWidth: 28 },
+      5: { cellWidth: 27, halign: 'center', minCellHeight: 15 }
+    }
+  }
+  
+ autoTable(doc, {
     startY: tableStartY,
-    head: [['No', 'Nama Lengkap', 'Instansi', 'Jabatan', 'Tanda Tangan']],
+    head: [tableHeaders],
     body: tableData,
     theme: 'grid',
     headStyles: {
-      fillColor: [41, 128, 185],
+      fillColor: [41, 128, 185], // ← BALIK KE BIRU ORIGINAL
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       halign: 'center',
@@ -174,41 +220,24 @@ export const exportToPDF = async (session: Session, attendances: Attendance[]) =
       lineWidth: 0.3,
       valign: 'middle' 
     },
-    columnStyles: {
-      0: { 
-        cellWidth: 12, 
-        halign: 'center'
-      },
-      1: { 
-        cellWidth: 55
-      },
-      2: { 
-        cellWidth: 45
-      },
-      3: { 
-        cellWidth: 38
-      },
-      4: { 
-        cellWidth: 30, 
-        halign: 'center',
-        minCellHeight: 15 
-      }
-    },
+    columnStyles: columnStyles,
     showHead: 'firstPage',
     margin: { top: 10, left: 14, right: 14, bottom: 20 },
     pageBreak: 'auto',
     rowPageBreak: 'avoid',
+  // ... rest sama
     // Tambahkan signature di setiap cell
     didDrawCell: (data) => {
-      if (data.column.index === 4 && data.section === 'body') {
+      const signatureColumnIndex = isEmployeeSession ? 4 : 5
+      
+      if (data.column.index === signatureColumnIndex && data.section === 'body') {
         const rowIndex = data.row.index
         const attendance = attendances[rowIndex]
         
         if (attendance && attendance.signature) {
           try {
-            // Tambahkan gambar signature
             const cell = data.cell
-            const imgWidth = 25 
+            const imgWidth = 22 
             const imgHeight = 10 
             const imgX = cell.x + (cell.width - imgWidth) / 2 
             const imgY = cell.y + (cell.height - imgHeight) / 2 
@@ -244,32 +273,57 @@ export const exportToPDF = async (session: Session, attendances: Attendance[]) =
   }
   
   // Download
-  const fileName = `Laporan_Absensi_${session.title.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`
+  const sessionTypeLabel = isEmployeeSession ? 'Pegawai' : 'Instansi_Luar'
+  const fileName = `Laporan_Absensi_${sessionTypeLabel}_${session.title.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`
   doc.save(fileName)
 }
 
-export const exportToCSV = (session: Session, attendances: Attendance[]) => {
-  const headers = ['No', 'Nama Lengkap', 'Instansi', 'Jabatan', 'No. Telepon', 'Waktu Absen']
+export const exportToCSV = (session: Session, attendances: (Attendance | EmployeeAttendance)[]) => {
+  const isEmployeeSession = session.session_type === 'employee'
   
-  const rows = attendances.map((att, index) => [
-    index + 1,
-    att.full_name,
-    att.institution,
-    att.position,
-    att.phone_number,
-    new Date(att.checked_in_at).toLocaleString('id-ID')
-  ])
+  let headers: string[]
+  let rows: any[]
+  
+  if (isEmployeeSession) {
+    headers = ['No', 'NIP', 'Nama Lengkap', 'Jabatan', 'Waktu Absen']
+    
+    rows = attendances.map((att, index) => {
+      const empAtt = att as EmployeeAttendance
+      return [
+        index + 1,
+        empAtt.nip,
+        empAtt.full_name,
+        empAtt.position,
+        new Date(empAtt.checked_in_at).toLocaleString('id-ID')
+      ]
+    })
+  } else {
+    headers = ['No', 'Nama Lengkap', 'Instansi', 'Jabatan', 'No. Telepon', 'Waktu Absen']
+    
+    rows = attendances.map((att, index) => {
+      const extAtt = att as Attendance
+      return [
+        index + 1,
+        extAtt.full_name,
+        extAtt.institution,
+        extAtt.position,
+        extAtt.phone_number,
+        new Date(extAtt.checked_in_at).toLocaleString('id-ID')
+      ]
+    })
+  }
   
   const csvContent = [
     headers.join(','),
-    ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ...rows.map(row => row.map((cell: string | number) => `"${cell}"`).join(','))
   ].join('\n')
   
   const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' })
   const link = document.createElement('a')
   const url = URL.createObjectURL(blob)
   
+  const sessionTypeLabel = isEmployeeSession ? 'Pegawai' : 'Instansi_Luar'
   link.setAttribute('href', url)
-  link.setAttribute('download', `Absensi_${session.title.replace(/\s+/g, '_')}.csv`)
+  link.setAttribute('download', `Absensi_${sessionTypeLabel}_${session.title.replace(/\s+/g, '_')}.csv`)
   link.click()
 }
