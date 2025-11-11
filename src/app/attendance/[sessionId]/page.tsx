@@ -331,7 +331,7 @@ export default function AttendancePage() {
                   <p className="text-xs text-gray-500 font-medium">Waktu</p>
                   <p className="font-medium">
                     {formatTime(session.start_time)}
-                    {session.end_time && ` - ${formatTime(session.end_time)}`} WIB
+                    {session.end_time ? ` - ${formatTime(session.end_time)}` : ' - selesai'} WIB
                   </p>
                 </div>
               </div>
