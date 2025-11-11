@@ -62,7 +62,7 @@ export const exportToPDF = async (session: Session, attendances: (Attendance | E
   doc.setFont('helvetica', 'bold')
   doc.text('DAFTAR HADIR', 105, 47, { align: 'center' })
   
-  const boxStartY = 58
+  const boxStartY = 52
   const labelX = 18
   const valueX = 50
   let contentHeight = 5 
@@ -78,7 +78,7 @@ export const exportToPDF = async (session: Session, attendances: (Attendance | E
     contentHeight += 5
   }
   
-  contentHeight += 5 + 5 + 5 + 3 
+  contentHeight += 5 + 5 + 5 + 6 
   
   doc.setDrawColor(200)
   doc.setFillColor(248, 249, 250)
@@ -102,7 +102,7 @@ export const exportToPDF = async (session: Session, attendances: (Attendance | E
     doc.setFont('helvetica', 'normal')
     const descLines = doc.splitTextToSize(`: ${session.description}`, 140)
     doc.text(descLines, valueX, yPos)
-    yPos += descLines.length * 4.5 + 1.5 // Konsisten dengan spacing lain
+    yPos += descLines.length * 4.5 + 1.5 
   }
   
   // Lokasi
@@ -144,14 +144,14 @@ export const exportToPDF = async (session: Session, attendances: (Attendance | E
   
   const tableStartY = boxStartY + contentHeight + 8
   
-  // Tabel Kehadiran - BERBEDA untuk Employee vs External
+  // Tabel Kehadiran 
   let tableHeaders: string[]
   let tableData: any[]
   let columnStyles: any
   let tableMargin: any
   
   if (isEmployeeSession) {
-    // TABEL PEGAWAI - CENTERED
+    // TABEL PEGAWAI 
     tableHeaders = ['No', 'NIP', 'Nama Lengkap', 'Jabatan', 'Tanda Tangan']
     
     tableData = attendances.map((att, index) => {
@@ -166,28 +166,20 @@ export const exportToPDF = async (session: Session, attendances: (Attendance | E
     })
     
     columnStyles = {
-      0: { cellWidth: 12, halign: 'center' },
-      1: { cellWidth: 32 },
-      2: { cellWidth: 48 },
-      3: { cellWidth: 40 },
-      4: { cellWidth: 30, halign: 'center', minCellHeight: 12 }
+      0: { cellWidth: 15, halign: 'center' },
+      1: { cellWidth: 40 },
+      2: { cellWidth: 60 },
+      3: { cellWidth: 42 },
+      4: { cellWidth: 25, halign: 'center', minCellHeight: 10 }
     }
-    
-    // CENTER TABLE untuk employee
-    const totalTableWidth = 12 + 32 + 48 + 40 + 30 // 162
-    const pageWidth = doc.internal.pageSize.width // 210
-    const leftMargin = (pageWidth - totalTableWidth) / 2 // Should be 24
-    
-    console.log('Employee - Total Width:', totalTableWidth, 'Left Margin:', leftMargin)
     
     tableMargin = { 
       top: 10, 
-      left: leftMargin, 
-      right: leftMargin, 
+      left: 14, 
+      right: 14, 
       bottom: 20 
     }
   } else {
-    // TABEL INSTANSI LUAR - CENTERED JUGA
     tableHeaders = ['No', 'Nama Lengkap', 'Instansi', 'Jabatan', 'No. Telepon', 'Tanda Tangan']
     
     tableData = attendances.map((att, index) => {
@@ -203,25 +195,18 @@ export const exportToPDF = async (session: Session, attendances: (Attendance | E
     })
     
     columnStyles = {
-      0: { cellWidth: 10, halign: 'center' },
-      1: { cellWidth: 36 },
-      2: { cellWidth: 34 },
-      3: { cellWidth: 32 },
-      4: { cellWidth: 26 },
-      5: { cellWidth: 26, halign: 'center', minCellHeight: 12 }
+      0: { cellWidth: 12, halign: 'center' },
+      1: { cellWidth: 42 },
+      2: { cellWidth: 40 },
+      3: { cellWidth: 38 },
+      4: { cellWidth: 28 },
+      5: { cellWidth: 22, halign: 'center', minCellHeight: 10 }
     }
-    
-    // CENTER TABLE untuk external juga
-    const totalTableWidth = 10 + 36 + 34 + 32 + 26 + 26 // 164
-    const pageWidth = doc.internal.pageSize.width // 210
-    const leftMargin = (pageWidth - totalTableWidth) / 2 // Should be 23
-    
-    console.log('External - Total Width:', totalTableWidth, 'Left Margin:', leftMargin)
     
     tableMargin = { 
       top: 10, 
-      left: leftMargin, 
-      right: leftMargin, 
+      left: 14, 
+      right: 14, 
       bottom: 20 
     }
   }
@@ -237,19 +222,19 @@ export const exportToPDF = async (session: Session, attendances: (Attendance | E
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       halign: 'center',
-      fontSize: 9,
+      fontSize: 8,
       lineColor: [200, 200, 200], 
       lineWidth: 0.3,
-      cellPadding: 2.5
+      cellPadding: 1.5
     },
     styles: {
-      fontSize: 8,
-      cellPadding: 2,
+      fontSize: 7.5,
+      cellPadding: 1.5,
       overflow: 'linebreak',
       lineColor: [200, 200, 200],
       lineWidth: 0.3,
       valign: 'middle',
-      minCellHeight: 8
+      minCellHeight: 6
     },
     columnStyles: columnStyles,
     showHead: 'firstPage',
@@ -268,8 +253,8 @@ export const exportToPDF = async (session: Session, attendances: (Attendance | E
         if (attendance && attendance.signature) {
           try {
             const cell = data.cell
-            const imgWidth = 20 // Reduced from 22
-            const imgHeight = 8 // Reduced from 10
+            const imgWidth = 18
+            const imgHeight = 7
             const imgX = cell.x + (cell.width - imgWidth) / 2 
             const imgY = cell.y + (cell.height - imgHeight) / 2 
             
