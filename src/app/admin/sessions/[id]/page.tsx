@@ -297,7 +297,7 @@ export default function SessionMonitorPage() {
                       : 'bg-blue-100 text-blue-700 border-blue-200'
                   } border px-2 py-0.5 rounded-lg font-medium text-xs whitespace-nowrap`}
                 >
-                  {isEmployeeSession ? 'PEGAWAI' : 'EKSTERNAL'}
+                  {isEmployeeSession ? 'INTERNAL' : 'EKSTERNAL'}
                 </Badge>
               </div>
               <p className="text-xs text-gray-500 truncate">Real-time attendance tracking</p>
@@ -358,7 +358,7 @@ export default function SessionMonitorPage() {
                       : 'bg-blue-100 text-blue-700 border-blue-200'
                   } border px-3 py-1 rounded-lg font-medium`}
                 >
-                  {isEmployeeSession ? 'PEGAWAI' : 'EKSTERNAL'}
+                  {isEmployeeSession ? 'INTERNAL' : 'EKSTERNAL'}
                 </Badge>
               </div>
             </div>

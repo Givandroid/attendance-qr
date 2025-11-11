@@ -32,14 +32,14 @@ export default function CreateExternalSessionPage() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 mb-0.5">
                   <h1 className="text-base sm:text-xl font-semibold text-gray-900 truncate">
-                    Buat Sesi Rapat Instansi Luar
+                    Buat Sesi Rapat Eksternal
                   </h1>
                   <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-semibold rounded hidden sm:inline-block flex-shrink-0">
                     EKSTERNAL
                   </span>
                 </div>
                 <p className="text-xs sm:text-sm text-gray-500 truncate">
-                  Isi detail sesi rapat untuk instansi eksternal
+                  Isi detail sesi rapat eksternal
                 </p>
               </div>
             </div>

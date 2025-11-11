@@ -32,7 +32,7 @@ export default function CreateEmployeeSessionPage() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 mb-0.5">
                   <h1 className="text-base sm:text-xl font-semibold text-gray-900 truncate">
-                    Buat Sesi Rapat Pegawai
+                    Buat Sesi Rapat Internal
                   </h1>
                   <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-semibold rounded hidden sm:inline-block flex-shrink-0">
                     INTERNAL

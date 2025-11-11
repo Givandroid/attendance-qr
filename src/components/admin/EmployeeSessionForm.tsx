@@ -193,7 +193,7 @@ export default function EmployeeSessionForm({ onSuccess }: { onSuccess?: (id: st
 
       if (error) throw error
       
-      alert('✅ Sesi Rapat Pegawai berhasil dibuat!')
+      alert('✅ Sesi Rapat Internal berhasil dibuat!')
       onSuccess?.(data.id)
       
       setForm({ 
@@ -219,8 +219,8 @@ export default function EmployeeSessionForm({ onSuccess }: { onSuccess?: (id: st
         isOpen={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}
         onConfirm={handleConfirmSubmit}
-        title="Konfirmasi Pembuatan Sesi Pegawai"
-        message="Pastikan semua informasi sesi sudah benar. Setelah dibuat, QR code untuk pegawai akan langsung tersedia."
+        title="Konfirmasi Pembuatan Sesi Internal"
+        message="Pastikan semua informasi sesi sudah benar. Setelah dibuat, QR code untuk sesi internal akan langsung tersedia."
         confirmText="Ya, Buat Sesi"
         cancelText="Periksa Kembali"
         sessionData={{
@@ -243,7 +243,7 @@ export default function EmployeeSessionForm({ onSuccess }: { onSuccess?: (id: st
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <h2 className="text-xl sm:text-2xl font-semibold text-slate-900">Sesi Rapat Pegawai</h2>
+                <h2 className="text-xl sm:text-2xl font-semibold text-slate-900">Sesi Rapat Internal</h2>
                 <span className="px-2.5 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-lg">
                   INTERNAL
                 </span>
@@ -457,7 +457,7 @@ export default function EmployeeSessionForm({ onSuccess }: { onSuccess?: (id: st
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <span>Buat Sesi Pegawai & Generate QR</span>
+                <span>Buat Sesi Internal & Generate QR</span>
               </div>
             )}
           </Button>

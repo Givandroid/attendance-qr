@@ -29,7 +29,7 @@ export interface Attendance {
   created_at: string
 }
 
-// NEW: Attendance untuk Pegawai
+// NEW: Attendance untuk Internal
 export interface EmployeeAttendance {
   id: string
   session_id: string

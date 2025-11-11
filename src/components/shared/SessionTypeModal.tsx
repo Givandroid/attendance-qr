@@ -61,7 +61,7 @@ export default function SessionTypeModal({
 
               {/* Title */}
               <h3 className="text-base sm:text-xl md:text-2xl font-bold text-gray-900 mb-1.5 sm:mb-2 md:mb-3">
-                Rapat Pegawai
+                Rapat Internal
               </h3>
 
               {/* Description */}
@@ -94,7 +94,7 @@ export default function SessionTypeModal({
 
               {/* Title */}
               <h3 className="text-base sm:text-xl md:text-2xl font-bold text-gray-900 mb-1.5 sm:mb-2 md:mb-3">
-                Rapat Instansi Luar
+                Rapat Eksternal
               </h3>
 
               {/* Description */}

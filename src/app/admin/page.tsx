@@ -425,7 +425,7 @@ export default function AdminDashboard() {
                   } rounded-xl hover:scale-105 transition-all duration-300 flex-shrink-0 min-w-[100px] h-9 whitespace-nowrap`}
                 >
                   <Calendar className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5" />
-                  Pegawai
+                  Internal
                 </Button>
                 <Button
                   onClick={() => setFilterType('external')}
@@ -524,7 +524,7 @@ export default function AdminDashboard() {
                                     : 'bg-amber-100 text-amber-700 border-amber-200'
                                 } border px-3 py-1 rounded-lg font-medium`}
                               >
-                                {isEmployee ? 'PEGAWAI' : 'EKSTERNAL'}
+                                {isEmployee ? 'INTERNAL' : 'EKSTERNAL'}
                               </Badge>
                               <Badge
                                 className={`${
@@ -643,7 +643,7 @@ export default function AdminDashboard() {
                                   : 'bg-amber-100 text-amber-700 border-amber-200'
                               } border px-2 py-0.5 rounded-lg font-medium text-xs whitespace-nowrap`}
                             >
-                              {isEmployee ? 'PEGAWAI' : 'EKSTERNAL'}
+                              {isEmployee ? 'INTERNAL' : 'EKSTERNAL'}
                             </Badge>
                             <Badge
                               className={`${
