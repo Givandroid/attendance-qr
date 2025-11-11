@@ -257,12 +257,9 @@ export default function EmployeeAttendancePage() {
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Form Absensi Pegawai</h1>
-                  <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-semibold rounded">
-                    INTERNAL
-                  </span>
+                  <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Form Absensi</h1>
                 </div>
-                <p className="text-xs sm:text-sm text-gray-500">Isi data absensi dengan NIP Anda</p>
+                <p className="text-xs sm:text-sm text-gray-500">Isi data anda dengan lengkap</p>
               </div>
             </div>
           </div>
