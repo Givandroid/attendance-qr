@@ -71,7 +71,7 @@ export const exportToPDF = async (session: Session, attendances: (Attendance | E
   
   if (session.description) {
     const descLines = doc.splitTextToSize(`: ${session.description}`, 140)
-    contentHeight += descLines.length * 4
+    contentHeight += descLines.length * 4.5
   }
   
   if (session.location) {
@@ -102,7 +102,7 @@ export const exportToPDF = async (session: Session, attendances: (Attendance | E
     doc.setFont('helvetica', 'normal')
     const descLines = doc.splitTextToSize(`: ${session.description}`, 140)
     doc.text(descLines, valueX, yPos)
-    yPos += descLines.length * 4.5
+    yPos += descLines.length * 4.5 + 1.5 // Konsisten dengan spacing lain
   }
   
   // Lokasi
@@ -148,9 +148,10 @@ export const exportToPDF = async (session: Session, attendances: (Attendance | E
   let tableHeaders: string[]
   let tableData: any[]
   let columnStyles: any
+  let tableMargin: any
   
   if (isEmployeeSession) {
-    // TABEL PEGAWAI
+    // TABEL PEGAWAI - CENTERED
     tableHeaders = ['No', 'NIP', 'Nama Lengkap', 'Jabatan', 'Tanda Tangan']
     
     tableData = attendances.map((att, index) => {
@@ -166,13 +167,27 @@ export const exportToPDF = async (session: Session, attendances: (Attendance | E
     
     columnStyles = {
       0: { cellWidth: 12, halign: 'center' },
-      1: { cellWidth: 35 },
-      2: { cellWidth: 50 },
-      3: { cellWidth: 38 },
-      4: { cellWidth: 30, halign: 'center', minCellHeight: 15 }
+      1: { cellWidth: 32 },
+      2: { cellWidth: 48 },
+      3: { cellWidth: 40 },
+      4: { cellWidth: 30, halign: 'center', minCellHeight: 12 }
+    }
+    
+    // CENTER TABLE untuk employee
+    const totalTableWidth = 12 + 32 + 48 + 40 + 30 // 162
+    const pageWidth = doc.internal.pageSize.width // 210
+    const leftMargin = (pageWidth - totalTableWidth) / 2 // Should be 24
+    
+    console.log('Employee - Total Width:', totalTableWidth, 'Left Margin:', leftMargin)
+    
+    tableMargin = { 
+      top: 10, 
+      left: leftMargin, 
+      right: leftMargin, 
+      bottom: 20 
     }
   } else {
-    // TABEL INSTANSI LUAR
+    // TABEL INSTANSI LUAR - CENTERED JUGA
     tableHeaders = ['No', 'Nama Lengkap', 'Instansi', 'Jabatan', 'No. Telepon', 'Tanda Tangan']
     
     tableData = attendances.map((att, index) => {
@@ -189,43 +204,59 @@ export const exportToPDF = async (session: Session, attendances: (Attendance | E
     
     columnStyles = {
       0: { cellWidth: 10, halign: 'center' },
-      1: { cellWidth: 38 },
-      2: { cellWidth: 35 },
+      1: { cellWidth: 36 },
+      2: { cellWidth: 34 },
       3: { cellWidth: 32 },
-      4: { cellWidth: 28 },
-      5: { cellWidth: 27, halign: 'center', minCellHeight: 15 }
+      4: { cellWidth: 26 },
+      5: { cellWidth: 26, halign: 'center', minCellHeight: 12 }
+    }
+    
+    // CENTER TABLE untuk external juga
+    const totalTableWidth = 10 + 36 + 34 + 32 + 26 + 26 // 164
+    const pageWidth = doc.internal.pageSize.width // 210
+    const leftMargin = (pageWidth - totalTableWidth) / 2 // Should be 23
+    
+    console.log('External - Total Width:', totalTableWidth, 'Left Margin:', leftMargin)
+    
+    tableMargin = { 
+      top: 10, 
+      left: leftMargin, 
+      right: leftMargin, 
+      bottom: 20 
     }
   }
   
- autoTable(doc, {
+  autoTable(doc, {
     startY: tableStartY,
     head: [tableHeaders],
     body: tableData,
     theme: 'grid',
+    tableWidth: 'auto',
     headStyles: {
-      fillColor: [41, 128, 185], // ← BALIK KE BIRU ORIGINAL
+      fillColor: [41, 128, 185],
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       halign: 'center',
       fontSize: 9,
       lineColor: [200, 200, 200], 
       lineWidth: 0.3,
-      cellPadding: 3 
+      cellPadding: 2.5
     },
     styles: {
       fontSize: 8,
-      cellPadding: 3,
+      cellPadding: 2,
       overflow: 'linebreak',
       lineColor: [200, 200, 200],
       lineWidth: 0.3,
-      valign: 'middle' 
+      valign: 'middle',
+      minCellHeight: 8
     },
     columnStyles: columnStyles,
     showHead: 'firstPage',
-    margin: { top: 10, left: 14, right: 14, bottom: 20 },
+    margin: tableMargin,
     pageBreak: 'auto',
     rowPageBreak: 'avoid',
-  // ... rest sama
+    
     // Tambahkan signature di setiap cell
     didDrawCell: (data) => {
       const signatureColumnIndex = isEmployeeSession ? 4 : 5
@@ -237,8 +268,8 @@ export const exportToPDF = async (session: Session, attendances: (Attendance | E
         if (attendance && attendance.signature) {
           try {
             const cell = data.cell
-            const imgWidth = 22 
-            const imgHeight = 10 
+            const imgWidth = 20 // Reduced from 22
+            const imgHeight = 8 // Reduced from 10
             const imgX = cell.x + (cell.width - imgWidth) / 2 
             const imgY = cell.y + (cell.height - imgHeight) / 2 
             
