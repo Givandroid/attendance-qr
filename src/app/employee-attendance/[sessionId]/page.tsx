@@ -250,73 +250,74 @@ export default function EmployeeAttendancePage() {
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
         <header className="bg-white border-b border-gray-200">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+          <div className="max-w-4xl mx-auto px-6 py-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center">
                 <Users className="w-5 h-5 text-white" />
               </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Form Absensi</h1>
-                </div>
-                <p className="text-xs sm:text-sm text-gray-500">Isi data anda dengan lengkap</p>
+              <div>
+                <h1 className="text-xl font-semibold text-gray-900">Form Absensi Pegawai</h1>
+                <p className="text-sm text-gray-500">Isi data Anda dengan lengkap</p>
               </div>
             </div>
           </div>
         </header>
 
         {/* Main Content */}
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <main className="max-w-4xl mx-auto px-6 py-8">
           {/* Session Info Card */}
-          <Card className="p-6 sm:p-8 mb-6 sm:mb-8 border border-gray-200 rounded-2xl bg-gradient-to-br from-blue-50 to-white">
+          <Card className="p-8 mb-8 border border-gray-200 rounded-2xl bg-gradient-to-br from-blue-50 to-white">
             <div className="flex items-start gap-4 mb-6">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                <Calendar className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+              <div className="w-14 h-14 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Calendar className="w-7 h-7 text-white" />
               </div>
-              <div className="flex-1 min-w-0">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 break-words">
+              <div className="flex-1">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
                   {session.title}
                 </h2>
                 {session.description && (
-                  <p className="text-sm sm:text-base text-gray-600 leading-relaxed mb-4 break-words">
+                  <p className="text-gray-600 leading-relaxed mb-4">
                     {session.description}
                   </p>
                 )}
               </div>
             </div>
 
-            <div className="grid sm:grid-cols-3 gap-3 sm:gap-4">
+            {/* INFO SESI */}
+            <div className="grid md:grid-cols-3 gap-4">
               {session.location && (
                 <div className="flex items-center gap-3 text-gray-700">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0">
-                    <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                  <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+                    <MapPin className="w-5 h-5 text-blue-600" />
                   </div>
-                  <div className="min-w-0 flex-1">
+                  <div>
                     <p className="text-xs text-gray-500 font-medium">Lokasi</p>
-                    <p className="text-sm sm:text-base font-semibold truncate">{session.location}</p>
+                    <p className="font-medium">{session.location}</p>
                   </div>
                 </div>
               )}
               
+              {/* Tanggal */}
               <div className="flex items-center gap-3 text-gray-700">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+                  <Calendar className="w-5 h-5 text-blue-600" />
                 </div>
-                <div className="min-w-0 flex-1">
+                <div>
                   <p className="text-xs text-gray-500 font-medium">Tanggal</p>
-                  <p className="text-sm sm:text-base font-semibold truncate">{formatSessionDate()}</p>
+                  <p className="font-medium">{formatSessionDate()}</p>
                 </div>
               </div>
 
+              {/* Waktu */}
               <div className="flex items-center gap-3 text-gray-700">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-blue-600" />
                 </div>
-                <div className="min-w-0 flex-1">
+                <div>
                   <p className="text-xs text-gray-500 font-medium">Waktu</p>
-                  <p className="text-sm sm:text-base font-semibold">
+                  <p className="font-medium">
                     {formatTime(session.start_time)}
-                    {session.end_time && ` - ${formatTime(session.end_time)}`}
+                    {session.end_time && ` - ${formatTime(session.end_time)}`} WIB
                   </p>
                 </div>
               </div>
@@ -324,13 +325,13 @@ export default function EmployeeAttendancePage() {
           </Card>
 
           {/* Form Card */}
-          <Card className="p-6 sm:p-8 border border-gray-200 rounded-2xl">
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-6">Data Pegawai</h3>
+          <Card className="p-8 border border-gray-200 rounded-2xl">
+            <h3 className="text-xl font-bold text-gray-900 mb-6">Data Pegawai</h3>
 
-            <div className="space-y-5 sm:space-y-6">
+            <div className="space-y-6">
               {/* NIP */}
               <div className="space-y-2">
-                <Label className="text-sm sm:text-base text-gray-700 font-medium flex items-center gap-2">
+                <Label className="text-gray-700 font-medium flex items-center gap-2">
                   <CreditCard className="w-4 h-4 text-blue-600" />
                   Nomor Induk Pegawai (NIP) <span className="text-red-600">*</span>
                 </Label>
@@ -339,13 +340,13 @@ export default function EmployeeAttendancePage() {
                   value={form.nip}
                   onChange={(e) => setForm({ ...form, nip: e.target.value })}
                   placeholder="Masukkan NIP Anda"
-                  className="border-gray-200 focus:border-blue-400 focus:ring-blue-400 rounded-xl h-11 sm:h-12 px-4 text-sm sm:text-base text-gray-900 placeholder:text-gray-400"
+                  className="border-gray-200 focus:border-blue-400 focus:ring-blue-400 rounded-xl h-12 px-4 text-gray-900 placeholder:text-gray-400"
                 />
               </div>
 
               {/* Nama Lengkap */}
               <div className="space-y-2">
-                <Label className="text-sm sm:text-base text-gray-700 font-medium flex items-center gap-2">
+                <Label className="text-gray-700 font-medium flex items-center gap-2">
                   <UserCheck className="w-4 h-4 text-blue-600" />
                   Nama Lengkap <span className="text-red-600">*</span>
                 </Label>
@@ -354,13 +355,13 @@ export default function EmployeeAttendancePage() {
                   value={form.full_name}
                   onChange={(e) => setForm({ ...form, full_name: e.target.value })}
                   placeholder="Masukkan nama lengkap Anda"
-                  className="border-gray-200 focus:border-blue-400 focus:ring-blue-400 rounded-xl h-11 sm:h-12 px-4 text-sm sm:text-base text-gray-900 placeholder:text-gray-400"
+                  className="border-gray-200 focus:border-blue-400 focus:ring-blue-400 rounded-xl h-12 px-4 text-gray-900 placeholder:text-gray-400"
                 />
               </div>
 
               {/* Jabatan */}
               <div className="space-y-2">
-                <Label className="text-sm sm:text-base text-gray-700 font-medium flex items-center gap-2">
+                <Label className="text-gray-700 font-medium flex items-center gap-2">
                   <Briefcase className="w-4 h-4 text-blue-600" />
                   Jabatan <span className="text-red-600">*</span>
                 </Label>
@@ -369,7 +370,7 @@ export default function EmployeeAttendancePage() {
                   value={form.position}
                   onChange={(e) => setForm({ ...form, position: e.target.value })}
                   placeholder="Jabatan Anda"
-                  className="border-gray-200 focus:border-blue-400 focus:ring-blue-400 rounded-xl h-11 sm:h-12 px-4 text-sm sm:text-base text-gray-900 placeholder:text-gray-400"
+                  className="border-gray-200 focus:border-blue-400 focus:ring-blue-400 rounded-xl h-12 px-4 text-gray-900 placeholder:text-gray-400"
                 />
               </div>
 
@@ -380,7 +381,7 @@ export default function EmployeeAttendancePage() {
               <Button
                 onClick={handleSubmitClick}
                 disabled={submitting || !form.nip || !form.full_name || !form.position || !signature}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 sm:h-14 rounded-xl text-sm sm:text-base font-semibold shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30 hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white h-14 rounded-xl text-base font-semibold shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30 hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 {submitting ? (
                   <div className="flex items-center gap-3">
@@ -395,7 +396,7 @@ export default function EmployeeAttendancePage() {
                 )}
               </Button>
 
-              <p className="text-xs sm:text-sm text-gray-500 text-center">
+              <p className="text-sm text-gray-500 text-center">
                 <span className="text-red-600">*</span> Wajib diisi
               </p>
             </div>
